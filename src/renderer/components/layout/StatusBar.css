@@ -1,0 +1,59 @@
+.statusbar {
+  height: var(--statusbar-height);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  font-size: 11px;
+  color: var(--text-muted);
+  border-top: 1px solid var(--border);
+  background: var(--bg-secondary);
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.statusbar__left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.statusbar__right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.statusbar__progress {
+  flex: 1;
+  max-width: 200px;
+  margin: 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.statusbar__progress-bar {
+  flex: 1;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--bg-surface);
+  overflow: hidden;
+}
+
+.statusbar__progress-fill {
+  height: 100%;
+  background: var(--accent-gradient);
+  border-radius: 2px;
+  transition: width var(--transition-fast);
+}
+
+.statusbar__progress-text {
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.statusbar__selected {
+  color: var(--accent);
+  font-weight: 500;
+}

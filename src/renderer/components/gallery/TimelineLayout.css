@@ -1,0 +1,41 @@
+.timeline-layout {
+  padding: 16px;
+  animation: fadeInGrid 300ms ease-out;
+}
+
+.timeline-group {
+  margin-bottom: 24px;
+}
+
+.timeline-group__header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  padding: 8px 14px;
+  margin-bottom: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  background: var(--bg-secondary);
+  border-left: 3px solid var(--accent);
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  backdrop-filter: blur(12px);
+  letter-spacing: 0.02em;
+}
+
+.timeline-group__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--grid-cell-size, 200px), 1fr));
+  gap: 8px;
+}
+
+@keyframes fadeInGrid {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

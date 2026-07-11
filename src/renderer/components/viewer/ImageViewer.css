@@ -1,0 +1,206 @@
+.image-viewer {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  background: rgba(8, 8, 10, 0.96);
+  backdrop-filter: blur(20px);
+  animation: fadeIn var(--transition-normal) forwards;
+  color: var(--text-primary);
+}
+
+.image-viewer__main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  overflow: hidden;
+  height: 100%;
+}
+
+.image-viewer__header {
+  height: var(--toolbar-height);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.4), transparent);
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+}
+
+.image-viewer__filename {
+  font-size: 14px;
+  font-weight: 500;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.6);
+}
+
+.image-viewer__header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.image-viewer__canvas {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px;
+  position: relative;
+  height: 100%;
+  user-select: none;
+}
+
+.image-viewer__img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  box-shadow: var(--shadow-lg);
+  border-radius: var(--radius-xs);
+  transition: transform 0.1s ease-out;
+}
+
+.image-viewer__nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255,255,255,0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: white;
+  transition: all var(--transition-fast);
+  cursor: pointer;
+  z-index: 10;
+}
+
+.image-viewer__nav-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-50%) scale(1.05);
+  box-shadow: var(--shadow-md);
+}
+
+.image-viewer__nav-btn--prev { left: 20px; }
+.image-viewer__nav-btn--next { right: 20px; }
+
+.image-viewer__bottom {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 16px;
+  background: linear-gradient(to top, rgba(0,0,0,0.5), transparent);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  z-index: 10;
+}
+
+.image-viewer__rating {
+  font-size: 20px;
+  color: #ffb800;
+  cursor: pointer;
+  display: flex;
+  gap: 4px;
+}
+
+.image-viewer__colors {
+  display: flex;
+  gap: 8px;
+}
+
+.image-viewer__color-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: transform var(--transition-fast);
+}
+
+.image-viewer__color-dot:hover { transform: scale(1.2); }
+.image-viewer__color-dot--active {
+  border-color: white;
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.6);
+}
+
+.image-viewer__sidebar {
+  width: 320px;
+  height: 100%;
+  background: var(--bg-elevated);
+  border-left: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  animation: slideInRight var(--transition-normal) forwards;
+  overflow-y: auto;
+}
+
+.image-viewer__sidebar-section {
+  padding: 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.image-viewer__sidebar-title {
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 12px;
+  letter-spacing: 0.5px;
+}
+
+.image-viewer__exif-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.image-viewer__exif-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.image-viewer__exif-label {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.image-viewer__exif-value {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.image-viewer__tag-list {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.image-viewer__tag-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  border: 1px dashed var(--border);
+  color: var(--text-muted);
+  font-size: 11px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.image-viewer__tag-add:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}

@@ -1,0 +1,18 @@
+.grid-layout {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--grid-cell-size), 1fr));
+  gap: 8px;
+  padding: 16px;
+  animation: fadeInGrid 300ms ease-out;
+}
+
+@keyframes fadeInGrid {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

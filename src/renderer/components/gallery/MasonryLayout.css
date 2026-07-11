@@ -1,0 +1,30 @@
+.masonry-layout {
+  padding: 16px;
+  animation: fadeInGrid 300ms ease-out;
+}
+
+.masonry-layout__columns {
+  column-gap: 8px;
+}
+
+.masonry-layout__item {
+  break-inside: avoid;
+  margin-bottom: 8px;
+  display: inline-block;
+  width: 100%;
+}
+
+.masonry-layout__item .image-card {
+  aspect-ratio: auto;
+}
+
+@keyframes fadeInGrid {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

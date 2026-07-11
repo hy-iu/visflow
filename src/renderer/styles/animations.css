@@ -1,0 +1,76 @@
+/* ===== FADE ===== */
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fadeOut { from { opacity: 1; } to { opacity: 0; } }
+
+/* ===== SLIDE ===== */
+@keyframes slideInRight { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+@keyframes slideOutLeft { from { transform: translateX(0); opacity: 1; } to { transform: translateX(-100%); opacity: 0; } }
+@keyframes slideInLeft { from { transform: translateX(-100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+@keyframes slideOutRight { from { transform: translateX(0); opacity: 1; } to { transform: translateX(100%); opacity: 0; } }
+@keyframes slideInUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+@keyframes slideInDown { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+/* ===== SCALE ===== */
+@keyframes scaleIn { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+@keyframes scaleOut { from { transform: scale(1); opacity: 1; } to { transform: scale(0.95); opacity: 0; } }
+@keyframes scaleInBounce { from { transform: scale(0.9); opacity: 0; } 70% { transform: scale(1.02); } to { transform: scale(1); opacity: 1; } }
+
+/* ===== KEN BURNS ===== */
+@keyframes kenBurnsA {
+  from { transform: scale(1) translate(0, 0); }
+  to { transform: scale(1.15) translate(-3%, -2%); }
+}
+@keyframes kenBurnsB {
+  from { transform: scale(1.1) translate(-2%, 1%); }
+  to { transform: scale(1) translate(2%, -1%); }
+}
+@keyframes kenBurnsC {
+  from { transform: scale(1) translate(0, 0); }
+  to { transform: scale(1.12) translate(3%, -2%); }
+}
+@keyframes kenBurnsD {
+  from { transform: scale(1.1) translate(2%, 0); }
+  to { transform: scale(1.02) translate(-1%, 1%); }
+}
+
+/* ===== SHIMMER ===== */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* ===== GLOW ===== */
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 8px rgba(99, 102, 241, 0.2); }
+  50% { box-shadow: 0 0 20px rgba(99, 102, 241, 0.5); }
+}
+
+/* ===== FLOAT ===== */
+@keyframes floatIn {
+  from { transform: translateY(12px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+/* ===== SPIN ===== */
+@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+/* ===== PROGRESS ===== */
+@keyframes progressStripe {
+  from { background-position: 1rem 0; }
+  to { background-position: 0 0; }
+}
+
+/* ===== TRANSITION UTILITY CLASSES ===== */
+.transition-fade-enter { animation: fadeIn var(--transition-normal) forwards; }
+.transition-fade-exit { animation: fadeOut var(--transition-normal) forwards; }
+.transition-slide-enter { animation: slideInRight var(--transition-normal) forwards; }
+.transition-slide-exit { animation: slideOutLeft var(--transition-normal) forwards; }
+.transition-scale-enter { animation: scaleIn var(--transition-normal) forwards; }
+.transition-scale-exit { animation: scaleOut var(--transition-normal) forwards; }
+.transition-float-enter { animation: floatIn var(--transition-slow) forwards; }
+
+.shimmer-placeholder {
+  background: linear-gradient(90deg, var(--bg-elevated) 25%, var(--bg-surface) 50%, var(--bg-elevated) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}

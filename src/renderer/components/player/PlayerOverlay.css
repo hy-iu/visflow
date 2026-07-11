@@ -1,0 +1,202 @@
+.player-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  background: black;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  user-select: none;
+}
+
+.player-overlay__viewport {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.player-overlay__slide {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity var(--transition-normal);
+  pointer-events: none;
+}
+
+.player-overlay__slide--active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.player-overlay__img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
+/* Display Modes */
+.player-overlay__img--fit {
+  max-width: 100vw;
+  max-height: 100vh;
+  object-fit: contain;
+  width: auto;
+  height: auto;
+}
+
+.player-overlay__img--original {
+  max-width: none !important;
+  max-height: none !important;
+  width: auto !important;
+  height: auto !important;
+  object-fit: none !important;
+}
+
+/* Viewport Track layouts */
+.player-overlay__viewport--track {
+  overflow: visible !important;
+  justify-content: flex-start !important;
+  align-items: flex-start !important;
+}
+
+.player-overlay__track {
+  display: flex;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.player-overlay__track--horizontal {
+  flex-direction: row;
+  align-items: center;
+  height: 100vh;
+}
+
+.player-overlay__track--vertical {
+  flex-direction: column;
+  align-items: center;
+  width: 100vw;
+}
+
+.player-overlay__slide--track-item {
+  position: relative !important;
+  inset: auto !important;
+  flex-shrink: 0;
+  opacity: 0.35;
+  transition: opacity 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.player-overlay__track--horizontal .player-overlay__slide--track-item {
+  margin: 0 4vw; /* Horizontal spacing */
+  height: 100%;
+  width: auto;
+}
+
+.player-overlay__track--vertical .player-overlay__slide--track-item {
+  margin: 4vh 0; /* Vertical spacing */
+  width: 100%;
+  height: auto;
+}
+
+.player-overlay__slide--track-item.player-overlay__slide--active {
+  opacity: 1;
+}
+
+/* Transiton Effects */
+
+/* Slide */
+.player-overlay__slide--slide-enter {
+  animation: slideInRight var(--transition-normal) forwards;
+}
+.player-overlay__slide--slide-exit {
+  animation: slideOutLeft var(--transition-normal) forwards;
+}
+
+/* Zoom */
+.player-overlay__slide--zoom-enter {
+  animation: scaleIn var(--transition-normal) forwards;
+}
+.player-overlay__slide--zoom-exit {
+  animation: scaleOut var(--transition-normal) forwards;
+}
+
+/* Ken Burns Effects */
+.player-overlay__slide--kenburns-active .player-overlay__img {
+  animation: kenBurnsA 8s ease-in-out infinite alternate;
+}
+.player-overlay__slide--kenburns-active-alt .player-overlay__img {
+  animation: kenBurnsB 8s ease-in-out infinite alternate;
+}
+
+/* Auto-scrolling Masonry layouts */
+.player-overlay__masonry-wrapper {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-start;
+}
+
+.player-overlay__masonry-wrapper--vertical {
+  width: 100vw;
+  height: 100vh;
+}
+
+.player-overlay__masonry-wrapper--horizontal {
+  width: 100vw;
+  height: 100vh;
+}
+
+.player-overlay__masonry-track {
+  will-change: transform;
+  display: flex;
+}
+
+.player-overlay__masonry-wrapper--vertical .player-overlay__masonry-track {
+  flex-direction: column;
+  width: 100%;
+}
+
+.player-overlay__masonry-wrapper--horizontal .player-overlay__masonry-track {
+  flex-direction: row;
+  height: 100%;
+}
+
+.player-overlay__masonry-sub {
+  width: 100%;
+  height: auto;
+  flex-shrink: 0;
+}
+
+.player-overlay__masonry-wrapper--horizontal .player-overlay__masonry-sub {
+  height: 100%;
+  width: auto;
+}
+
+.player-overlay__masonry-item {
+  position: relative;
+  overflow: hidden;
+  background: var(--bg-surface);
+  border-radius: 8px;
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.player-overlay__masonry-item:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--accent-glow);
+}
+
+.player-overlay__masonry-img {
+  transition: opacity 0.3s ease;
+  will-change: opacity;
+}
