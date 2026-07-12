@@ -257,7 +257,10 @@ export async function fixMissingDimensions(): Promise<void> {
       if (width && height) {
         db.update(images).set({ width, height }).where(eq(images.id, img.id)).run()
       }
-    } catch (err) {
+    } catch (err: any) {
+      if (err?.message?.includes('database connection is not open')) {
+        break
+      }
       console.error(`[importer] Failed to fix dimensions for ${img.filePath}:`, err)
     }
   }

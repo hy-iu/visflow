@@ -26,6 +26,33 @@ export default function PlayerOverlay() {
 
   const images = useLibraryStore((s) => s.images)
 
+  // Load original sizes dynamically in the frontend if missing in SQLite database
+  const [loadedDimensions, setLoadedDimensions] = useState<Record<string, { w: number; h: number }>>({})
+  useEffect(() => {
+    imageIds.forEach((id) => {
+      const img = images.find((i) => i.id === id)
+      if (!img) return
+      if (img.width && img.height) return
+      if (loadedDimensions[id]) return
+
+      const imgUrl = getImageUrl(img.filePath)
+      const tempImg = new Image()
+      tempImg.onload = () => {
+        setLoadedDimensions((prev) => ({
+          ...prev,
+          [id]: { w: tempImg.naturalWidth, h: tempImg.naturalHeight }
+        }))
+      }
+      tempImg.onerror = () => {
+        setLoadedDimensions((prev) => ({
+          ...prev,
+          [id]: { w: 800, h: 600 }
+        }))
+      }
+      tempImg.src = imgUrl
+    })
+  }, [imageIds, images, loadedDimensions])
+
   // Calculate organic collage coordinates in main component body
   const organicLayoutItems = useMemo(() => {
     const canvasWidth = window.innerWidth
@@ -33,25 +60,22 @@ export default function PlayerOverlay() {
     const placed: { x: number; y: number; w: number; h: number }[] = []
     
     // We allow overlap to pack them organically
-    const overlapAllowance = 32 * zoomScale
+    const overlapAllowance = 16 * zoomScale
 
     return imageIds.map((id) => {
       const img = images.find((i) => i.id === id)
       if (!img) return null
       
-      const naturalW = img.width || 800
-      const naturalH = img.height || 600
+      const dim = loadedDimensions[id] || { w: img.width || 800, h: img.height || 600 }
+      const naturalW = dim.w
+      const naturalH = dim.h
       
       const w = naturalW * zoomScale
       const h = naturalH * zoomScale
 
+      // Keep exact original aspect ratio and shape
       const displayW = Math.min(w, canvasWidth - 32)
       const displayH = h * (displayW / w)
-
-      const hash = hashString(id)
-      const rotation = (hash % 8) - 4 // -4deg to +4deg
-      const shiftX = (hashString(id + 'x') % (30 * zoomScale + 1)) - (15 * zoomScale)
-      const shiftY = (hashString(id + 'y') % (30 * zoomScale + 1)) - (15 * zoomScale)
 
       const candidateY = [0, ...placed.map((r) => r.y + r.h + gap - overlapAllowance)].sort((a, b) => a - b)
       const candidateX = [0, ...placed.map((r) => r.x + r.w + gap - overlapAllowance)]
@@ -106,14 +130,13 @@ export default function PlayerOverlay() {
       return {
         id,
         img,
-        x: chosenX + shiftX,
-        y: chosenY + shiftY,
+        x: chosenX,
+        y: chosenY,
         w: displayW,
-        h: displayH,
-        rotation
+        h: displayH
       }
     }).filter(Boolean) as any[]
-  }, [imageIds, zoomScale, window.innerWidth, images])
+  }, [imageIds, zoomScale, window.innerWidth, images, loadedDimensions])
 
   const organicTotalHeight = useMemo(() => {
     if (organicLayoutItems.length === 0) return 0
@@ -428,12 +451,10 @@ export default function PlayerOverlay() {
               top: `${item.y}px`,
               width: `${item.w}px`,
               height: `${item.h}px`,
-              transform: `rotate(${item.rotation}deg)`,
-              border: '4px solid rgba(255, 255, 255, 0.95)',
-              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.55)',
-              background: '#0e0e11',
+              boxShadow: '0 4px 16px rgba(0, 0, 0, 0.45)',
+              background: 'transparent',
               borderRadius: '4px',
-              transition: 'transform 0.2s ease'
+              overflow: 'hidden'
             }}
           >
             <img
@@ -445,8 +466,7 @@ export default function PlayerOverlay() {
                 width: '100%',
                 height: '100%',
                 display: 'block',
-                objectFit: 'contain',
-                borderRadius: '2px'
+                objectFit: 'contain'
               }}
             />
           </div>
