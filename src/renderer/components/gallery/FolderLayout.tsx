@@ -45,7 +45,21 @@ const FolderRow: React.FC<FolderRowProps> = ({
       .catch((err: any) => console.error(err))
   }, [collection.id, sortBy, sortDir, searchQuery])
 
-  if (images.length === 0) return null
+  if (images.length === 0) {
+    return (
+      <div className="folder-row folder-row--empty">
+        <div className="folder-row__header">
+          <span className="folder-row__title">📁 {collection.name}</span>
+          <span className="folder-row__count">0 张图片</span>
+        </div>
+        <div className="folder-row__content">
+          <div className="folder-row__empty-placeholder">
+            此图集内暂无图片。您可以在 “所有图片” 或 “时间轴” 视图下选择图片，然后右键选择 “添加到图集: {collection.name}”。
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   // gridSize mapping to row heights for horizontal scroll mode
   const rowHeightMap: Record<number, number> = {
@@ -136,6 +150,18 @@ export const FolderLayout: React.FC<FolderLayoutProps> = ({ onContextMenu }) => 
   const sortBy = useViewStore((s) => s.sortBy)
   const sortDir = useViewStore((s) => s.sortDir)
   const searchQuery = useViewStore((s) => s.searchQuery)
+
+  if (collections.length === 0) {
+    return (
+      <div className="folder-layout__empty">
+        <span className="folder-layout__empty-icon">📁</span>
+        <span className="folder-layout__empty-title">暂无图集/文件夹</span>
+        <span className="folder-layout__empty-desc">
+          请点击左侧侧边栏中“文件夹/图集”右侧的 “+” 按钮新建一个图集，然后在“所有图片”或“时间轴”中右键图片添加到该图集。
+        </span>
+      </div>
+    )
+  }
 
   return (
     <div className="folder-layout">

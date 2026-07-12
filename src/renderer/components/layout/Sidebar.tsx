@@ -172,7 +172,7 @@ export default function Sidebar() {
         <div
           className={`sidebar__nav-item ${currentView === 'all' && orgMode === 'all' ? 'sidebar__nav-item--active' : ''}`}
           onClick={() => {
-            navigateTo('all')
+            navigateTo('all', null, '所有图片')
             setOrgMode('all')
           }}
         >
@@ -184,7 +184,7 @@ export default function Sidebar() {
         <div
           className={`sidebar__nav-item ${currentView === 'all' && orgMode === 'timeline' ? 'sidebar__nav-item--active' : ''}`}
           onClick={() => {
-            navigateTo('all')
+            navigateTo('all', null, '时间轴')
             setOrgMode('timeline')
           }}
         >
@@ -196,7 +196,7 @@ export default function Sidebar() {
         <div
           className={`sidebar__nav-item ${currentView === 'all' && orgMode === 'folders' ? 'sidebar__nav-item--active' : ''}`}
           onClick={() => {
-            navigateTo('all')
+            navigateTo('all', null, '图集总览')
             setOrgMode('folders')
           }}
         >
