@@ -7,7 +7,7 @@ import { registerCollectionHandlers } from './ipc/collections'
 import { registerTagHandlers } from './ipc/tags'
 import { registerPlaylistHandlers } from './ipc/playlists'
 import { registerSmartGroupHandlers } from './ipc/smart-groups'
-import { importFolder, importFiles } from './services/importer'
+import { importFolder, importFiles, fixMissingDimensions } from './services/importer'
 
 // Register protocol privileges before app ready
 registerProtocolPrivileges()
@@ -46,6 +46,7 @@ function registerAppHandlers(): void {
 
 app.whenReady().then(() => {
   registerProtocols(); getDb()
+  fixMissingDimensions().catch(err => console.error(err))
   registerImageHandlers(); registerCollectionHandlers(); registerTagHandlers()
   registerPlaylistHandlers(); registerSmartGroupHandlers(); registerAppHandlers()
   createWindow()

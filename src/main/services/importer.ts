@@ -20,6 +20,8 @@ import { getDb } from '../db/connection'
 import { images } from '../db/schema'
 import { parseExif } from './exif'
 import { generateThumbnail, ensureThumbDir } from './thumbnail'
+import sharp from 'sharp'
+import { eq, isNull } from 'drizzle-orm'
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                             */
@@ -132,6 +134,22 @@ async function importSingleFile(filePath: string): Promise<boolean> {
   /* Parse EXIF (may return null for PNGs etc.). */
   const exif = await parseExif(filePath)
 
+  /* Get actual width & height from sharp metadata. */
+  let width: number | null = exif?.imageWidth ?? null
+  let height: number | null = exif?.imageHeight ?? null
+  try {
+    const meta = await sharp(filePath).metadata()
+    if (meta.width) width = meta.width
+    if (meta.height) height = meta.height
+    if (meta.orientation && meta.orientation >= 5 && meta.orientation <= 8) {
+      const temp = width
+      width = height
+      height = temp
+    }
+  } catch (err) {
+    console.error('Failed to read image metadata via sharp:', err)
+  }
+
   /* Generate thumbnail. */
   const thumbPath = await generateThumbnail(filePath, id)
 
@@ -144,8 +162,8 @@ async function importSingleFile(filePath: string): Promise<boolean> {
       fileName,
       mimeType,
       fileSize: stat.size,
-      width: exif?.imageWidth ?? null,
-      height: exif?.imageHeight ?? null,
+      width,
+      height,
       thumbPath,
       exifJson: exif ? JSON.stringify(exif) : null,
       rating: 0,
@@ -216,4 +234,31 @@ export async function importFiles(
   }
 
   return result
+}
+
+/**
+ * Scan database for any images with missing dimensions and fix them using sharp.
+ */
+export async function fixMissingDimensions(): Promise<void> {
+  const db = getDb()
+  const list = db.select().from(images).where(isNull(images.width)).all()
+  if (list.length === 0) return
+  console.log(`[importer] Found ${list.length} images with missing dimensions. Fixing...`)
+  for (const img of list) {
+    try {
+      const meta = await sharp(img.filePath).metadata()
+      let width = meta.width ?? null
+      let height = meta.height ?? null
+      if (meta.orientation && meta.orientation >= 5 && meta.orientation <= 8) {
+        const temp = width
+        width = height
+        height = temp
+      }
+      if (width && height) {
+        db.update(images).set({ width, height }).where(eq(images.id, img.id)).run()
+      }
+    } catch (err) {
+      console.error(`[importer] Failed to fix dimensions for ${img.filePath}:`, err)
+    }
+  }
 }

@@ -1,9 +1,17 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useMemo } from 'react'
 import { usePlayerStore } from '../../stores/usePlayerStore'
 import { useLibraryStore } from '../../stores/useLibraryStore'
 import PlayerControls from './PlayerControls'
 import { getImageUrl } from '../../lib/utils'
 import './PlayerOverlay.css'
+
+function hashString(str: string): number {
+  let hash = 0
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash)
+  }
+  return Math.abs(hash)
+}
 
 export default function PlayerOverlay() {
   const isPlaying = usePlayerStore((s) => s.isPlaying)
@@ -17,6 +25,100 @@ export default function PlayerOverlay() {
   const stopPlayback = usePlayerStore((s) => s.stopPlayback)
 
   const images = useLibraryStore((s) => s.images)
+
+  // Calculate organic collage coordinates in main component body
+  const organicLayoutItems = useMemo(() => {
+    const canvasWidth = window.innerWidth
+    const gap = 24 * zoomScale
+    const placed: { x: number; y: number; w: number; h: number }[] = []
+    
+    // We allow overlap to pack them organically
+    const overlapAllowance = 32 * zoomScale
+
+    return imageIds.map((id) => {
+      const img = images.find((i) => i.id === id)
+      if (!img) return null
+      
+      const naturalW = img.width || 800
+      const naturalH = img.height || 600
+      
+      const w = naturalW * zoomScale
+      const h = naturalH * zoomScale
+
+      const displayW = Math.min(w, canvasWidth - 32)
+      const displayH = h * (displayW / w)
+
+      const hash = hashString(id)
+      const rotation = (hash % 8) - 4 // -4deg to +4deg
+      const shiftX = (hashString(id + 'x') % (30 * zoomScale + 1)) - (15 * zoomScale)
+      const shiftY = (hashString(id + 'y') % (30 * zoomScale + 1)) - (15 * zoomScale)
+
+      const candidateY = [0, ...placed.map((r) => r.y + r.h + gap - overlapAllowance)].sort((a, b) => a - b)
+      const candidateX = [0, ...placed.map((r) => r.x + r.w + gap - overlapAllowance)]
+        .filter((x) => x + displayW <= canvasWidth)
+        .sort((a, b) => a - b)
+
+      let chosenX = 0
+      let chosenY = 0
+      let found = false
+      let minScore = Infinity
+
+      for (const y of candidateY) {
+        if (y < 0) continue
+        for (const x of candidateX) {
+          if (x + displayW > canvasWidth) continue
+
+          let overlap = false
+          for (const r of placed) {
+            const intersects = !(
+              x + displayW - overlapAllowance <= r.x ||
+              x + overlapAllowance >= r.x + r.w ||
+              y + displayH - overlapAllowance <= r.y ||
+              y + overlapAllowance >= r.y + r.h
+            )
+            if (intersects) {
+              overlap = true
+              break
+            }
+          }
+
+          if (!overlap) {
+            const score = y + x * 0.05
+            if (score < minScore) {
+              minScore = score
+              chosenX = x
+              chosenY = y
+              found = true
+            }
+          }
+        }
+        if (found) break
+      }
+
+      if (!found) {
+        chosenX = 0
+        chosenY = placed.length > 0 ? Math.max(...placed.map((r) => r.y + r.h + gap)) : 0
+      }
+
+      const rect = { x: chosenX, y: chosenY, w: displayW, h: displayH }
+      placed.push(rect)
+
+      return {
+        id,
+        img,
+        x: chosenX + shiftX,
+        y: chosenY + shiftY,
+        w: displayW,
+        h: displayH,
+        rotation
+      }
+    }).filter(Boolean) as any[]
+  }, [imageIds, zoomScale, window.innerWidth, images])
+
+  const organicTotalHeight = useMemo(() => {
+    if (organicLayoutItems.length === 0) return 0
+    return Math.max(...organicLayoutItems.map(item => item.y + item.h)) + 32 * zoomScale
+  }, [organicLayoutItems, zoomScale])
 
   const [controlsVisible, setControlsVisible] = useState(true)
   const controlsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -307,90 +409,16 @@ export default function PlayerOverlay() {
 
   // Render organic collage layout (2D packing)
   const renderOrganicLayout = () => {
-    const canvasWidth = window.innerWidth
-    const gap = 16 * zoomScale
-    const placed: { x: number; y: number; w: number; h: number }[] = []
-
-    // Calculate coordinates for each image
-    const layoutItems = imageIds.map((id) => {
-      const img = images.find((i) => i.id === id)
-      if (!img) return null
-      const w = (img.width || 800) * zoomScale
-      const h = (img.height || 600) * zoomScale
-
-      // Fit within screen width
-      const displayW = Math.min(w, canvasWidth - 32)
-      const displayH = h * (displayW / w)
-
-      // Heuristic search for y & x
-      const candidateY = [0, ...placed.map((r) => r.y + r.h + gap)].sort((a, b) => a - b)
-      const candidateX = [0, ...placed.map((r) => r.x + r.w + gap)]
-        .filter((x) => x + displayW <= canvasWidth)
-        .sort((a, b) => a - b)
-
-      let chosenX = 0
-      let chosenY = 0
-      let found = false
-      let minScore = Infinity
-
-      for (const y of candidateY) {
-        for (const x of candidateX) {
-          if (x + displayW > canvasWidth) continue
-
-          let overlap = false
-          for (const r of placed) {
-            const intersects = !(
-              x + displayW <= r.x ||
-              x >= r.x + r.w ||
-              y + displayH <= r.y ||
-              y >= r.y + r.h
-            )
-            if (intersects) {
-              overlap = true
-              break
-            }
-          }
-
-          if (!overlap) {
-            const score = y + x * 0.05
-            if (score < minScore) {
-              minScore = score
-              chosenX = x
-              chosenY = y
-              found = true
-            }
-          }
-        }
-        if (found) break
-      }
-
-      if (!found) {
-        chosenX = 0
-        chosenY = placed.length > 0 ? Math.max(...placed.map((r) => r.y + r.h + gap)) : 0
-      }
-
-      const rect = { x: chosenX, y: chosenY, w: displayW, h: displayH }
-      placed.push(rect)
-
-      return {
-        id,
-        img,
-        ...rect
-      }
-    }).filter(Boolean) as any[]
-
-    const totalHeight = placed.length > 0 ? Math.max(...placed.map((r) => r.y + r.h + gap)) : 0
-
     const renderGridContent = () => (
       <div
         className="player-overlay__organic-grid"
         style={{
           position: 'relative',
           width: '100%',
-          height: `${totalHeight}px`
+          height: `${organicTotalHeight}px`
         }}
       >
-        {layoutItems.map((item) => (
+        {organicLayoutItems.map((item) => (
           <div
             key={item.id}
             className="player-overlay__masonry-item"
@@ -399,7 +427,13 @@ export default function PlayerOverlay() {
               left: `${item.x}px`,
               top: `${item.y}px`,
               width: `${item.w}px`,
-              height: `${item.h}px`
+              height: `${item.h}px`,
+              transform: `rotate(${item.rotation}deg)`,
+              border: '4px solid rgba(255, 255, 255, 0.95)',
+              boxShadow: '0 8px 24px rgba(0, 0, 0, 0.55)',
+              background: '#0e0e11',
+              borderRadius: '4px',
+              transition: 'transform 0.2s ease'
             }}
           >
             <img
@@ -407,7 +441,13 @@ export default function PlayerOverlay() {
               src={getImageUrl(item.img.filePath)}
               alt=""
               onLoad={triggerRecalc}
-              style={{ width: '100%', height: '100%', display: 'block', objectFit: 'cover', borderRadius: '8px' }}
+              style={{
+                width: '100%',
+                height: '100%',
+                display: 'block',
+                objectFit: 'contain',
+                borderRadius: '2px'
+              }}
             />
           </div>
         ))}
@@ -420,10 +460,10 @@ export default function PlayerOverlay() {
           className="player-overlay__masonry-track"
           style={{ transform: `translate3d(0, -${scrollOffset}px, 0)` }}
         >
-          <div ref={subContainerRef} className="player-overlay__masonry-sub" style={{ height: `${totalHeight}px` }}>
+          <div ref={subContainerRef} className="player-overlay__masonry-sub" style={{ height: `${organicTotalHeight}px` }}>
             {renderGridContent()}
           </div>
-          <div className="player-overlay__masonry-sub" style={{ height: `${totalHeight}px` }}>
+          <div className="player-overlay__masonry-sub" style={{ height: `${organicTotalHeight}px` }}>
             {renderGridContent()}
           </div>
         </div>
