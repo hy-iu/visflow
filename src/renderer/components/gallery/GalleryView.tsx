@@ -5,13 +5,15 @@ import { useDragDrop } from '../../hooks/useDragDrop'
 import { GridLayout } from './GridLayout'
 import { MasonryLayout } from './MasonryLayout'
 import { TimelineLayout } from './TimelineLayout'
+import { FolderLayout } from './FolderLayout'
 import ContextMenu from '../common/ContextMenu'
 import './GalleryView.css'
 
 export default function GalleryView() {
   const containerRef = useRef<HTMLDivElement>(null)
   
-  const layout = useViewStore((s) => s.layout)
+  const layoutStyle = useViewStore((s) => s.layoutStyle)
+  const orgMode = useViewStore((s) => s.orgMode)
   const currentView = useViewStore((s) => s.currentView)
   const currentViewId = useViewStore((s) => s.currentViewId)
   const sortBy = useViewStore((s) => s.sortBy)
@@ -161,10 +163,16 @@ export default function GalleryView() {
   }
 
   const renderLayout = () => {
-    if (layout === 'masonry') {
+    if (currentView === 'all') {
+      if (orgMode === 'timeline') {
+        return <TimelineLayout images={images} onContextMenu={handleContextMenu} />
+      } else if (orgMode === 'folders') {
+        return <FolderLayout onContextMenu={handleContextMenu} />
+      }
+    }
+
+    if (layoutStyle === 'masonry') {
       return <MasonryLayout images={images} onContextMenu={handleContextMenu} />
-    } else if (layout === 'timeline') {
-      return <TimelineLayout images={images} onContextMenu={handleContextMenu} />
     }
     return <GridLayout images={images} onContextMenu={handleContextMenu} />
   }

@@ -7,8 +7,11 @@ export default function Toolbar() {
   const sidebarOpen = useViewStore((s) => s.sidebarOpen)
   const toggleSidebar = useViewStore((s) => s.toggleSidebar)
   const currentViewName = useViewStore((s) => s.currentViewName)
-  const layout = useViewStore((s) => s.layout)
-  const setLayout = useViewStore((s) => s.setLayout)
+  const layoutStyle = useViewStore((s) => s.layoutStyle)
+  const setLayoutStyle = useViewStore((s) => s.setLayoutStyle)
+  const orgMode = useViewStore((s) => s.orgMode)
+  const foldersWrap = useViewStore((s) => s.foldersWrap)
+  const toggleFoldersWrap = useViewStore((s) => s.toggleFoldersWrap)
   const gridSize = useViewStore((s) => s.gridSize)
   const setGridSize = useViewStore((s) => s.setGridSize)
   const sortBy = useViewStore((s) => s.sortBy)
@@ -63,26 +66,33 @@ export default function Toolbar() {
 
       <div className="toolbar__actions">
         <button
-          className={`toolbar__layout-btn ${layout === 'grid' ? 'toolbar__layout-btn--active' : ''}`}
-          title="网格布局"
-          onClick={() => setLayout('grid')}
+          className={`toolbar__layout-btn ${layoutStyle === 'grid' ? 'toolbar__layout-btn--active' : ''}`}
+          title="网格排版"
+          onClick={() => setLayoutStyle('grid')}
         >
           ⊞
         </button>
         <button
-          className={`toolbar__layout-btn ${layout === 'masonry' ? 'toolbar__layout-btn--active' : ''}`}
-          title="瀑布流布局"
-          onClick={() => setLayout('masonry')}
+          className={`toolbar__layout-btn ${layoutStyle === 'masonry' ? 'toolbar__layout-btn--active' : ''}`}
+          title="瀑布流排版"
+          onClick={() => setLayoutStyle('masonry')}
         >
           ▤
         </button>
-        <button
-          className={`toolbar__layout-btn ${layout === 'timeline' ? 'toolbar__layout-btn--active' : ''}`}
-          title="时间轴布局"
-          onClick={() => setLayout('timeline')}
-        >
-          ⫶
-        </button>
+
+        {currentView === 'all' && orgMode === 'folders' && (
+          <>
+            <div className="toolbar__divider" />
+            <button
+              className="btn btn-secondary toolbar__wrap-btn"
+              style={{ fontSize: 12, padding: '4px 8px', minWidth: 64, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              onClick={toggleFoldersWrap}
+              title={foldersWrap ? '当前为折行平铺' : '当前为横滚单行'}
+            >
+              {foldersWrap ? '↵ 换行' : '➔ 横滚'}
+            </button>
+          </>
+        )}
 
         <div className="toolbar__divider" />
 

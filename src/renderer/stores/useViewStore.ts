@@ -1,12 +1,15 @@
 import { create } from 'zustand'
 
-type LayoutMode = 'grid' | 'masonry' | 'timeline'
+type LayoutStyle = 'grid' | 'masonry'
+type OrgMode = 'all' | 'timeline' | 'folders'
 type SortBy = 'importedAt' | 'createdAt' | 'fileName' | 'rating' | 'fileSize'
 type SortDir = 'asc' | 'desc'
 type NavigationView = 'all' | 'collection' | 'tag' | 'playlist' | 'smartGroup'
 
 interface ViewState {
-  layout: LayoutMode
+  layoutStyle: LayoutStyle
+  orgMode: OrgMode
+  foldersWrap: boolean
   sortBy: SortBy
   sortDir: SortDir
   gridSize: number
@@ -20,7 +23,9 @@ interface ViewState {
   viewerImageId: string | null
   searchQuery: string
 
-  setLayout: (layout: LayoutMode) => void
+  setLayoutStyle: (style: LayoutStyle) => void
+  setOrgMode: (mode: OrgMode) => void
+  toggleFoldersWrap: () => void
   setSortBy: (sortBy: SortBy) => void
   toggleSortDir: () => void
   setGridSize: (size: number) => void
@@ -38,7 +43,9 @@ const savedTheme = (typeof localStorage !== 'undefined'
   : null) || 'dark'
 
 export const useViewStore = create<ViewState>((set) => ({
-  layout: 'grid',
+  layoutStyle: 'grid',
+  orgMode: 'all',
+  foldersWrap: false,
   sortBy: 'importedAt',
   sortDir: 'desc',
   gridSize: 2,
@@ -52,7 +59,9 @@ export const useViewStore = create<ViewState>((set) => ({
   viewerImageId: null,
   searchQuery: '',
 
-  setLayout: (layout) => set({ layout }),
+  setLayoutStyle: (layoutStyle) => set({ layoutStyle }),
+  setOrgMode: (orgMode) => set({ orgMode }),
+  toggleFoldersWrap: () => set((s) => ({ foldersWrap: !s.foldersWrap })),
   setSortBy: (sortBy) => set({ sortBy }),
   toggleSortDir: () => set((s) => ({ sortDir: s.sortDir === 'asc' ? 'desc' : 'asc' })),
   setGridSize: (gridSize) => set({ gridSize: Math.min(3, Math.max(1, gridSize)) }),

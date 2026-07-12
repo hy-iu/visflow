@@ -20,7 +20,9 @@ export default function CommandPalette() {
   const inputRef = useRef<HTMLInputElement>(null)
 
   const toggleTheme = useViewStore((s) => s.toggleTheme)
-  const setLayout = useViewStore((s) => s.setLayout)
+  const setLayoutStyle = useViewStore((s) => s.setLayoutStyle)
+  const setOrgMode = useViewStore((s) => s.setOrgMode)
+  const navigateTo = useViewStore((s) => s.navigateTo)
   const loadAll = useLibraryStore((s) => s.loadAll)
   const setImportProgress = useLibraryStore((s) => s.setImportProgress)
 
@@ -40,9 +42,11 @@ export default function CommandPalette() {
     { id: 'import', label: '导入图片文件夹', icon: '📥', shortcut: 'Ctrl+I', category: '文件', perform: handleImportFolder },
     { id: 'refresh', label: '刷新图库数据', icon: '🔄', category: '文件', perform: () => loadAll() },
     { id: 'theme', label: '切换暗色/亮色主题', icon: '🌓', category: '系统', perform: () => toggleTheme() },
-    { id: 'layout-grid', label: '切换为网格布局', icon: '⊞', shortcut: 'G', category: '布局', perform: () => setLayout('grid') },
-    { id: 'layout-masonry', label: '切换为瀑布流布局', icon: '▤', category: '布局', perform: () => setLayout('masonry') },
-    { id: 'layout-timeline', label: '切换为时间轴布局', icon: '⫶', category: '布局', perform: () => setLayout('timeline') },
+    { id: 'layout-grid', label: '切换为网格排版', icon: '⊞', shortcut: 'G', category: '布局', perform: () => setLayoutStyle('grid') },
+    { id: 'layout-masonry', label: '切换为瀑布流排版', icon: '▤', category: '布局', perform: () => setLayoutStyle('masonry') },
+    { id: 'view-all', label: '查看所有图片', icon: '📷', category: '视图', perform: () => { navigateTo('all'); setOrgMode('all') } },
+    { id: 'view-timeline', label: '查看时间轴', icon: '⫶', category: '视图', perform: () => { navigateTo('all'); setOrgMode('timeline') } },
+    { id: 'view-folders', label: '查看图集总览', icon: '📁', category: '视图', perform: () => { navigateTo('all'); setOrgMode('folders') } },
   ]
 
   // Global listener for Ctrl+K

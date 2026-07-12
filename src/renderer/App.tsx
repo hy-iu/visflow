@@ -65,7 +65,7 @@ export default function App() {
       }
 
       // Gallery shortcuts
-      if (e.key === 'g' || e.key === 'G') { viewStore.setLayout('grid') }
+      if (e.key === 'g' || e.key === 'G') { viewStore.setLayoutStyle('grid') }
       else if (e.key === 'f' || e.key === 'F') {
         if (!document.fullscreenElement) document.documentElement.requestFullscreen()
         else document.exitFullscreen()

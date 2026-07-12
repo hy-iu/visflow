@@ -1,0 +1,99 @@
+.folder-layout {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  animation: fadeInGrid 300ms ease-out;
+}
+
+.folder-row {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  background: rgba(255, 255, 255, 0.015);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.folder-row__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-left: 3px solid var(--accent);
+  padding-left: 8px;
+}
+
+.folder-row__title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.folder-row__count {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.folder-row__content {
+  position: relative;
+  width: 100%;
+}
+
+/* Horizontal unwrap scroll track */
+.folder-row__track {
+  display: flex;
+  flex-direction: row;
+  overflow-x: auto;
+  gap: 12px;
+  padding: 8px 4px;
+  align-items: center;
+  width: 100%;
+  scroll-behavior: smooth;
+}
+
+.folder-row__track::-webkit-scrollbar {
+  height: 6px;
+}
+
+.folder-row__track::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.folder-row__track::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: var(--radius-full);
+}
+
+.folder-row__track::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Grid layout overrides inside scroll track */
+.folder-row__track--grid .image-card {
+  height: var(--row-height);
+  width: var(--row-height);
+  flex-shrink: 0;
+  aspect-ratio: 1 !important;
+}
+
+/* Masonry layout overrides inside scroll track */
+.folder-row__track--masonry .image-card {
+  height: var(--row-height);
+  width: auto;
+  flex-shrink: 0;
+  aspect-ratio: auto !important;
+}
+
+.folder-row__track--masonry .image-card__img {
+  width: auto;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* Wrap Grid styles */
+.folder-row__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--grid-cell-size), 1fr));
+  gap: 8px;
+}

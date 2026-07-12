@@ -3,6 +3,7 @@ import { useViewStore } from '../../stores/useViewStore'
 import { useLibraryStore } from '../../stores/useLibraryStore'
 import { groupByDate } from '../../lib/utils'
 import { ImageCard } from './ImageCard'
+import { MasonryLayout } from './MasonryLayout'
 import './TimelineLayout.css'
 
 interface TimelineLayoutProps {
@@ -19,6 +20,7 @@ const GRID_CELL_SIZES: Record<number, string> = {
 export const TimelineLayout: React.FC<TimelineLayoutProps> = ({ images, onContextMenu }) => {
   const gridSize = useViewStore((s) => s.gridSize)
   const openViewer = useViewStore((s) => s.openViewer)
+  const layoutStyle = useViewStore((s) => s.layoutStyle)
   const selectedImageIds = useLibraryStore((s) => s.selectedImageIds)
   const selectImage = useLibraryStore((s) => s.selectImage)
 
@@ -44,18 +46,22 @@ export const TimelineLayout: React.FC<TimelineLayoutProps> = ({ images, onContex
               {groupImages.length} 张
             </span>
           </div>
-          <div className="timeline-group__grid" style={gridStyle}>
-            {groupImages.map((image: any) => (
-              <ImageCard
-                key={image.id}
-                image={image}
-                isSelected={selectedImageIds.has(image.id)}
-                onSelect={selectImage}
-                onOpen={openViewer}
-                onContextMenu={onContextMenu}
-              />
-            ))}
-          </div>
+          {layoutStyle === 'masonry' ? (
+            <MasonryLayout images={groupImages} onContextMenu={onContextMenu} />
+          ) : (
+            <div className="timeline-group__grid" style={gridStyle}>
+              {groupImages.map((image: any) => (
+                <ImageCard
+                  key={image.id}
+                  image={image}
+                  isSelected={selectedImageIds.has(image.id)}
+                  onSelect={selectImage}
+                  onOpen={openViewer}
+                  onContextMenu={onContextMenu}
+                />
+              ))}
+            </div>
+          )}
         </div>
       ))}
     </div>

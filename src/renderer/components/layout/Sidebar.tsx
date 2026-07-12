@@ -13,6 +13,9 @@ export default function Sidebar() {
   const currentView = useViewStore((s) => s.currentView)
   const currentViewId = useViewStore((s) => s.currentViewId)
   const navigateTo = useViewStore((s) => s.navigateTo)
+  const orgMode = useViewStore((s) => s.orgMode)
+  const setOrgMode = useViewStore((s) => s.setOrgMode)
+
 
   const collections = useLibraryStore((s) => s.collections)
   const tags = useLibraryStore((s) => s.tags)
@@ -167,11 +170,38 @@ export default function Sidebar() {
       <div className="sidebar__content">
         {/* All Photos */}
         <div
-          className={`sidebar__nav-item ${currentView === 'all' ? 'sidebar__nav-item--active' : ''}`}
-          onClick={() => navigateTo('all')}
+          className={`sidebar__nav-item ${currentView === 'all' && orgMode === 'all' ? 'sidebar__nav-item--active' : ''}`}
+          onClick={() => {
+            navigateTo('all')
+            setOrgMode('all')
+          }}
         >
           <span className="sidebar__nav-icon">📷</span>
-          <span className="sidebar__nav-label">所有照片</span>
+          <span className="sidebar__nav-label">所有图片</span>
+        </div>
+
+        {/* Timeline */}
+        <div
+          className={`sidebar__nav-item ${currentView === 'all' && orgMode === 'timeline' ? 'sidebar__nav-item--active' : ''}`}
+          onClick={() => {
+            navigateTo('all')
+            setOrgMode('timeline')
+          }}
+        >
+          <span className="sidebar__nav-icon">⫶</span>
+          <span className="sidebar__nav-label">时间轴</span>
+        </div>
+
+        {/* Folders View */}
+        <div
+          className={`sidebar__nav-item ${currentView === 'all' && orgMode === 'folders' ? 'sidebar__nav-item--active' : ''}`}
+          onClick={() => {
+            navigateTo('all')
+            setOrgMode('folders')
+          }}
+        >
+          <span className="sidebar__nav-icon">📁</span>
+          <span className="sidebar__nav-label">图集总览</span>
         </div>
 
         <div className="sidebar__divider" />
