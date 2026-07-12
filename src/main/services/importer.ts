@@ -259,6 +259,7 @@ export async function fixMissingDimensions(): Promise<void> {
       }
     } catch (err: any) {
       if (err?.message?.includes('database connection is not open')) {
+        console.log('[importer] Database connection closed. Migration stopped.')
         break
       }
       console.error(`[importer] Failed to fix dimensions for ${img.filePath}:`, err)
