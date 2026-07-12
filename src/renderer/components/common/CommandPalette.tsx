@@ -44,9 +44,9 @@ export default function CommandPalette() {
     { id: 'theme', label: '切换暗色/亮色主题', icon: '🌓', category: '系统', perform: () => toggleTheme() },
     { id: 'layout-grid', label: '切换为网格排版', icon: '⊞', shortcut: 'G', category: '布局', perform: () => setLayoutStyle('grid') },
     { id: 'layout-masonry', label: '切换为瀑布流排版', icon: '▤', category: '布局', perform: () => setLayoutStyle('masonry') },
-    { id: 'view-all', label: '查看所有图片', icon: '📷', category: '视图', perform: () => { navigateTo('all'); setOrgMode('all') } },
-    { id: 'view-timeline', label: '查看时间轴', icon: '⫶', category: '视图', perform: () => { navigateTo('all'); setOrgMode('timeline') } },
-    { id: 'view-folders', label: '查看图集总览', icon: '📁', category: '视图', perform: () => { navigateTo('all'); setOrgMode('folders') } },
+    { id: 'view-all', label: '查看所有图片', icon: '📷', category: '视图', perform: () => { navigateTo('all', null, '所有图片'); setOrgMode('all') } },
+    { id: 'view-timeline', label: '查看时间轴', icon: '⫶', category: '视图', perform: () => { navigateTo('all', null, '时间轴'); setOrgMode('timeline') } },
+    { id: 'view-folders', label: '查看文件夹视图', icon: '📁', category: '视图', perform: () => { navigateTo('all', null, '文件夹'); setOrgMode('folders') } },
   ]
 
   // Global listener for Ctrl+K

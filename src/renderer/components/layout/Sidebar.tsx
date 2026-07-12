@@ -196,12 +196,12 @@ export default function Sidebar() {
         <div
           className={`sidebar__nav-item ${currentView === 'all' && orgMode === 'folders' ? 'sidebar__nav-item--active' : ''}`}
           onClick={() => {
-            navigateTo('all', null, '图集总览')
+            navigateTo('all', null, '文件夹')
             setOrgMode('folders')
           }}
         >
           <span className="sidebar__nav-icon">📁</span>
-          <span className="sidebar__nav-label">图集总览</span>
+          <span className="sidebar__nav-label">文件夹</span>
         </div>
 
         <div className="sidebar__divider" />
