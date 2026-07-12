@@ -204,6 +204,18 @@ export default function Sidebar() {
           <span className="sidebar__nav-label">文件夹</span>
         </div>
 
+        {/* Collections Overview */}
+        <div
+          className={`sidebar__nav-item ${currentView === 'all' && orgMode === 'collections' ? 'sidebar__nav-item--active' : ''}`}
+          onClick={() => {
+            navigateTo('all', null, '图集总览')
+            setOrgMode('collections')
+          }}
+        >
+          <span className="sidebar__nav-icon">📚</span>
+          <span className="sidebar__nav-label">图集总览</span>
+        </div>
+
         <div className="sidebar__divider" />
 
         {/* Collections */}
@@ -211,7 +223,7 @@ export default function Sidebar() {
           <div className="sidebar__section-header" onClick={() => toggleSection('collections')}>
             <span className="sidebar__section-title">
               <span className={`sidebar__section-arrow ${expandedSections.collections ? 'sidebar__section-arrow--expanded' : ''}`}>▸</span>
-              文件夹/图集
+              图集
             </span>
             <button className="sidebar__add-btn" onClick={handleCreateCollection}>+</button>
           </div>

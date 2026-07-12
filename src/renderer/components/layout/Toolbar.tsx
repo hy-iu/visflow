@@ -12,6 +12,8 @@ export default function Toolbar() {
   const orgMode = useViewStore((s) => s.orgMode)
   const foldersWrap = useViewStore((s) => s.foldersWrap)
   const toggleFoldersWrap = useViewStore((s) => s.toggleFoldersWrap)
+  const foldersSortBy = useViewStore((s) => s.foldersSortBy)
+  const setFoldersSortBy = useViewStore((s) => s.setFoldersSortBy)
   const gridSize = useViewStore((s) => s.gridSize)
   const setGridSize = useViewStore((s) => s.setGridSize)
   const sortBy = useViewStore((s) => s.sortBy)
@@ -105,16 +107,32 @@ export default function Toolbar() {
           onChange={(e) => setGridSize(parseInt(e.target.value))}
           title="网格尺寸"
         />
-
         <div className="toolbar__divider" />
+
+        {currentView === 'all' && orgMode === 'folders' && (
+          <>
+            <select
+              className="toolbar__sort-select"
+              value={foldersSortBy}
+              onChange={(e: any) => setFoldersSortBy(e.target.value as any)}
+              title="文件夹行排序"
+              style={{ marginRight: 4 }}
+            >
+              <option value="name">📁 按文件夹名称</option>
+              <option value="path">📁 按绝对路径</option>
+              <option value="count">📁 按图片数量</option>
+            </select>
+          </>
+        )}
 
         <select
           className="toolbar__sort-select"
           value={sortBy}
           onChange={(e: any) => setSortBy(e.target.value)}
+          title="照片排序"
         >
           <option value="importedAt">导入时间</option>
-          <option value="createdAt">创建时间</option>
+          <option value="createdAt">拍摄时间</option>
           <option value="fileName">文件名</option>
           <option value="rating">评分</option>
           <option value="fileSize">文件大小</option>

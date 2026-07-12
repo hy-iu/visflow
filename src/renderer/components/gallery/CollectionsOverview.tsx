@@ -1,32 +1,49 @@
-import React, { useMemo } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useViewStore } from '../../stores/useViewStore'
 import { useLibraryStore } from '../../stores/useLibraryStore'
 import { ImageCard } from './ImageCard'
 import { MasonryLayout } from './MasonryLayout'
-import './FolderLayout.css'
+import './FolderLayout.css' // Reuse the row styling
 
-interface FolderRowProps {
-  dirPath: string
-  dirName: string
-  images: any[]
+interface CollectionRowProps {
+  collection: any
   layoutStyle: 'grid' | 'masonry'
   foldersWrap: boolean
   gridSize: number
+  sortBy: string
+  sortDir: string
+  searchQuery: string
   onContextMenu?: (e: React.MouseEvent, id: string) => void
 }
 
-const FolderRow: React.FC<FolderRowProps> = ({
-  dirPath,
-  dirName,
-  images,
+const CollectionRow: React.FC<CollectionRowProps> = ({
+  collection,
   layoutStyle,
   foldersWrap,
   gridSize,
+  sortBy,
+  sortDir,
+  searchQuery,
   onContextMenu,
 }) => {
+  const [images, setImages] = useState<any[]>([])
   const openViewer = useViewStore((s) => s.openViewer)
   const selectedImageIds = useLibraryStore((s) => s.selectedImageIds)
   const selectImage = useLibraryStore((s) => s.selectImage)
+
+  useEffect(() => {
+    window.api
+      .getImages({
+        collectionId: collection.id,
+        sortBy,
+        sortDir,
+        search: searchQuery || undefined,
+      })
+      .then((res: any[]) => {
+        setImages(res || [])
+      })
+      .catch((err: any) => console.error(err))
+  }, [collection.id, sortBy, sortDir, searchQuery])
 
   // gridSize mapping to row heights for horizontal scroll mode
   const rowHeightMap: Record<number, number> = {
@@ -52,6 +69,14 @@ const FolderRow: React.FC<FolderRowProps> = ({
   } as React.CSSProperties
 
   const renderContent = () => {
+    if (images.length === 0) {
+      return (
+        <div className="folder-row__empty-placeholder">
+          此图集内暂无图片。您可以在 “所有图片” 或 “时间轴” 视图下选择图片，然后右键选择 “添加到图集: {collection.name}”。
+        </div>
+      )
+    }
+
     if (!foldersWrap) {
       // Unwrap: Horizontal scroll row
       return (
@@ -97,10 +122,7 @@ const FolderRow: React.FC<FolderRowProps> = ({
   return (
     <div className="folder-row">
       <div className="folder-row__header">
-        <div className="folder-row__header-info">
-          <span className="folder-row__title">📁 {dirName}</span>
-          <span className="folder-row__path" title={dirPath}>{dirPath}</span>
-        </div>
+        <span className="folder-row__title">📁 {collection.name}</span>
         <span className="folder-row__count">{images.length} 张图片</span>
       </div>
       <div className="folder-row__content">{renderContent()}</div>
@@ -108,87 +130,26 @@ const FolderRow: React.FC<FolderRowProps> = ({
   )
 }
 
-interface FolderLayoutProps {
+interface CollectionsOverviewProps {
   onContextMenu?: (e: React.MouseEvent, id: string) => void
 }
 
-function parseDirectory(filePath: string) {
-  const isWindows = filePath.includes('\\')
-  const separator = isWindows ? '\\' : '/'
-  const parts = filePath.split(/[/\\]/)
-  const fileName = parts.pop() || ''
-  const dirPath = parts.join(separator)
-  const dirName = parts[parts.length - 1] || dirPath
-  return { dirPath, dirName }
-}
-
-export const FolderLayout: React.FC<FolderLayoutProps> = ({ onContextMenu }) => {
-  const images = useLibraryStore((s) => s.images)
+export const CollectionsOverview: React.FC<CollectionsOverviewProps> = ({ onContextMenu }) => {
+  const collections = useLibraryStore((s) => s.collections)
   const layoutStyle = useViewStore((s) => s.layoutStyle)
   const foldersWrap = useViewStore((s) => s.foldersWrap)
   const gridSize = useViewStore((s) => s.gridSize)
-  const foldersSortBy = useViewStore((s) => s.foldersSortBy)
+  const sortBy = useViewStore((s) => s.sortBy)
   const sortDir = useViewStore((s) => s.sortDir)
+  const searchQuery = useViewStore((s) => s.searchQuery)
 
-  // Group images by their physical parent folder
-  const folderGroups = useMemo(() => {
-    const groupsMap = new Map<string, { dirPath: string; dirName: string; list: any[] }>()
-    
-    for (const img of images) {
-      if (!img.filePath) continue
-      const { dirPath, dirName } = parseDirectory(img.filePath)
-      
-      if (!groupsMap.has(dirPath)) {
-        groupsMap.set(dirPath, { dirPath, dirName, list: [] })
-      }
-      groupsMap.get(dirPath)!.list.push(img)
-    }
-    
-    const list = Array.from(groupsMap.values())
-    
-    list.sort((a, b) => {
-      let valA: any = a.dirName
-      let valB: any = b.dirName
-      
-      if (foldersSortBy === 'count') {
-        valA = a.list.length
-        valB = b.list.length
-      } else if (foldersSortBy === 'path') {
-        valA = a.dirPath
-        valB = b.dirPath
-      }
-      
-      if (typeof valA === 'number' && typeof valB === 'number') {
-        return sortDir === 'asc' ? valA - valB : valB - valA
-      }
-      
-      return sortDir === 'asc' 
-        ? valA.localeCompare(valB) 
-        : valB.localeCompare(valA)
-    })
-    
-    return list
-  }, [images, foldersSortBy, sortDir])
-
-  if (images.length === 0) {
-    return (
-      <div className="folder-layout__empty">
-        <span className="folder-layout__empty-icon">📷</span>
-        <span className="folder-layout__empty-title">你的图库空空如也</span>
-        <span className="folder-layout__empty-desc">
-          请点击右上角的“导入”按钮，或将文件夹拖拽到此处开始导入。
-        </span>
-      </div>
-    )
-  }
-
-  if (folderGroups.length === 0) {
+  if (collections.length === 0) {
     return (
       <div className="folder-layout__empty">
         <span className="folder-layout__empty-icon">📁</span>
-        <span className="folder-layout__empty-title">未识别到文件夹</span>
+        <span className="folder-layout__empty-title">暂无图集/文件夹</span>
         <span className="folder-layout__empty-desc">
-          未能在图库图片的路径中解析出有效的文件夹。
+          请点击左侧侧边栏中“图集”栏右侧的 “+” 按钮新建一个图集，然后在“所有图片”或“时间轴”中右键图片添加到该图集。
         </span>
       </div>
     )
@@ -196,15 +157,16 @@ export const FolderLayout: React.FC<FolderLayoutProps> = ({ onContextMenu }) => 
 
   return (
     <div className="folder-layout">
-      {folderGroups.map((group) => (
-        <FolderRow
-          key={group.dirPath}
-          dirPath={group.dirPath}
-          dirName={group.dirName}
-          images={group.list}
+      {collections.map((col) => (
+        <CollectionRow
+          key={col.id}
+          collection={col}
           layoutStyle={layoutStyle}
           foldersWrap={foldersWrap}
           gridSize={gridSize}
+          sortBy={sortBy}
+          sortDir={sortDir}
+          searchQuery={searchQuery}
           onContextMenu={onContextMenu}
         />
       ))}

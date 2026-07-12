@@ -6,6 +6,7 @@ import { GridLayout } from './GridLayout'
 import { MasonryLayout } from './MasonryLayout'
 import { TimelineLayout } from './TimelineLayout'
 import { FolderLayout } from './FolderLayout'
+import { CollectionsOverview } from './CollectionsOverview'
 import ContextMenu from '../common/ContextMenu'
 import './GalleryView.css'
 
@@ -168,6 +169,8 @@ export default function GalleryView() {
         return <TimelineLayout images={images} onContextMenu={handleContextMenu} />
       } else if (orgMode === 'folders') {
         return <FolderLayout onContextMenu={handleContextMenu} />
+      } else if (orgMode === 'collections') {
+        return <CollectionsOverview onContextMenu={handleContextMenu} />
       }
     }
 
