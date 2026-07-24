@@ -1,0 +1,42 @@
+name: Build & Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  release:
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Prepare NSFW models
+        shell: bash
+        run: |
+          # NSFW 模型文件体积较大，未纳入 Git 版本控制。
+          # 如需发布含 NSFW 审查功能的完整版本，请在此处将模型下载到 models/nudenet/ 目录，
+          # 例如通过 Git LFS 或对象存储获取 640m.onnx 等文件。
+          mkdir -p models/nudenet
+          if [ ! -f models/nudenet/640m.onnx ]; then
+            echo "::warning::未找到 NSFW 模型文件，本次构建产物将不含 NSFW 检测功能。"
+          fi
+
+      - name: Build renderer/main
+        run: npm run build
+
+      - name: Package & Publish to GitHub Releases
+        run: npx electron-builder --win --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

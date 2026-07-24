@@ -94,8 +94,9 @@ async function getNsfwModel(): Promise<nsfwjs.NSFWJS> {
 async function getYoloSession(): Promise<ort.InferenceSession | null> {
   if (yoloSession) return yoloSession
   try {
-    // Model is in project root: models/nudenet/640m.onnx
-    const modelPath = path.join(app.getAppPath(), 'models', 'nudenet', '640m.onnx')
+    // Model location: bundled resources when packaged, project root in dev
+    const base = app.isPackaged ? process.resourcesPath : app.getAppPath()
+    const modelPath = path.join(base, 'models', 'nudenet', '640m.onnx')
     if (!fs.existsSync(modelPath)) {
       console.warn('[NSFW] YOLO model not found at:', modelPath)
       return null
