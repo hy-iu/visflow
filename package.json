@@ -51,6 +51,10 @@
     },
     "portable": {
       "artifactName": "${productName}-${version}-Windows-${arch}-Portable.${ext}"
+    },
+    "publish": {
+      "provider": "github",
+      "releaseType": "release"
     }
   },
   "dependencies": {
