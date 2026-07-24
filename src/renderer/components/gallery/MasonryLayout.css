@@ -1,21 +1,27 @@
 .masonry-layout {
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
   padding: 16px;
+  box-sizing: border-box;
   animation: fadeInGrid 300ms ease-out;
 }
 
-.masonry-layout__columns {
-  column-gap: 8px;
+.masonry-layout__virtual {
+  position: relative;
+  margin: 0 auto;
 }
 
 .masonry-layout__item {
-  break-inside: avoid;
-  margin-bottom: 8px;
-  display: inline-block;
-  width: 100%;
+  overflow: hidden;
+  border-radius: var(--radius-md);
 }
 
 .masonry-layout__item .image-card {
-  aspect-ratio: auto;
+  aspect-ratio: unset;
+  width: 100%;
+  height: 100%;
+  border-radius: var(--radius-md);
 }
 
 @keyframes fadeInGrid {

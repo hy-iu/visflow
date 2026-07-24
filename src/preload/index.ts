@@ -37,5 +37,18 @@ contextBridge.exposeInMainWorld('api', {
     const handler = (_e: any, p: any) => cb(p)
     ipcRenderer.on('import:progress', handler)
     return () => ipcRenderer.removeListener('import:progress', handler)
+  },
+  // NSFW review
+  nsfwScan: () => ipcRenderer.invoke('nsfw:scan'),
+  nsfwCancelScan: () => ipcRenderer.invoke('nsfw:cancelScan'),
+  nsfwSetStatus: (imageId: string, status: 'safe' | 'nsfw') => ipcRenderer.invoke('nsfw:setStatus', imageId, status),
+  nsfwBatchSetStatus: (imageIds: string[], status: 'safe' | 'nsfw') => ipcRenderer.invoke('nsfw:batchSetStatus', imageIds, status),
+  nsfwGetPendingCount: () => ipcRenderer.invoke('nsfw:getPendingCount'),
+  nsfwGetCounts: () => ipcRenderer.invoke('nsfw:getCounts'),
+  nsfwClearResults: () => ipcRenderer.invoke('nsfw:clearResults'),
+  onNsfwProgress: (cb: (p: any) => void) => {
+    const handler = (_e: any, p: any) => cb(p)
+    ipcRenderer.on('nsfw:progress', handler)
+    return () => ipcRenderer.removeListener('nsfw:progress', handler)
   }
 })

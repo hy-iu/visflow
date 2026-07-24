@@ -136,4 +136,14 @@ function createTablesIfNeeded(raw: Database.Database): void {
       created_at INTEGER
     );
   `)
+
+  /* Migrate: add NSFW columns if missing (for existing databases). */
+  const cols = raw.prepare(`PRAGMA table_info(images)`).all() as { name: string }[]
+  const colNames = cols.map((c) => c.name)
+  if (!colNames.includes('nsfw_score')) {
+    raw.exec(`ALTER TABLE images ADD COLUMN nsfw_score INTEGER`)
+  }
+  if (!colNames.includes('nsfw_status')) {
+    raw.exec(`ALTER TABLE images ADD COLUMN nsfw_status TEXT DEFAULT 'pending'`)
+  }
 }

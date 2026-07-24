@@ -1,9 +1,14 @@
-import React, { useMemo } from 'react'
+import React, { useMemo, useState, useCallback } from 'react'
 import { useViewStore } from '../../stores/useViewStore'
 import { useLibraryStore } from '../../stores/useLibraryStore'
 import { ImageCard } from './ImageCard'
 import { MasonryLayout } from './MasonryLayout'
 import './FolderLayout.css'
+
+/** Max images to render per folder in unwrap (horizontal scroll) mode */
+const UNWRAP_RENDER_LIMIT = 60
+/** Max images to render per folder in wrap grid mode */
+const WRAP_GRID_RENDER_LIMIT = 200
 
 interface FolderRowProps {
   dirPath: string
@@ -15,7 +20,7 @@ interface FolderRowProps {
   onContextMenu?: (e: React.MouseEvent, id: string) => void
 }
 
-const FolderRow: React.FC<FolderRowProps> = ({
+const FolderRow: React.FC<FolderRowProps> = React.memo(({
   dirPath,
   dirName,
   images,
@@ -27,6 +32,7 @@ const FolderRow: React.FC<FolderRowProps> = ({
   const openViewer = useViewStore((s) => s.openViewer)
   const selectedImageIds = useLibraryStore((s) => s.selectedImageIds)
   const selectImage = useLibraryStore((s) => s.selectImage)
+  const [showAll, setShowAll] = useState(false)
 
   // gridSize mapping to row heights for horizontal scroll mode
   const rowHeightMap: Record<number, number> = {
@@ -53,13 +59,15 @@ const FolderRow: React.FC<FolderRowProps> = ({
 
   const renderContent = () => {
     if (!foldersWrap) {
-      // Unwrap: Horizontal scroll row
+      // Unwrap: Horizontal scroll row (limit rendered count)
+      const renderLimit = showAll ? images.length : UNWRAP_RENDER_LIMIT
+      const visibleImages = images.slice(0, renderLimit)
       return (
         <div
           className={`folder-row__track folder-row__track--${layoutStyle}`}
           style={trackStyle}
         >
-          {images.map((image) => (
+          {visibleImages.map((image) => (
             <ImageCard
               key={image.id}
               image={image}
@@ -69,6 +77,11 @@ const FolderRow: React.FC<FolderRowProps> = ({
               onContextMenu={onContextMenu}
             />
           ))}
+          {!showAll && images.length > UNWRAP_RENDER_LIMIT && (
+            <button className="folder-row__show-more" onClick={() => setShowAll(true)}>
+              +{images.length - UNWRAP_RENDER_LIMIT}
+            </button>
+          )}
         </div>
       )
     } else {
@@ -76,9 +89,11 @@ const FolderRow: React.FC<FolderRowProps> = ({
       if (layoutStyle === 'masonry') {
         return <MasonryLayout images={images} onContextMenu={onContextMenu} />
       } else {
+        const renderLimit = showAll ? images.length : WRAP_GRID_RENDER_LIMIT
+        const visibleImages = images.slice(0, renderLimit)
         return (
           <div className="folder-row__grid" style={gridStyle}>
-            {images.map((image) => (
+            {visibleImages.map((image) => (
               <ImageCard
                 key={image.id}
                 image={image}
@@ -88,6 +103,11 @@ const FolderRow: React.FC<FolderRowProps> = ({
                 onContextMenu={onContextMenu}
               />
             ))}
+            {!showAll && images.length > WRAP_GRID_RENDER_LIMIT && (
+              <button className="folder-row__show-more folder-row__show-more--grid" onClick={() => setShowAll(true)}>
+                显示全部 {images.length} 张
+              </button>
+            )}
           </div>
         )
       }
@@ -106,7 +126,7 @@ const FolderRow: React.FC<FolderRowProps> = ({
       <div className="folder-row__content">{renderContent()}</div>
     </div>
   )
-}
+})
 
 interface FolderLayoutProps {
   onContextMenu?: (e: React.MouseEvent, id: string) => void

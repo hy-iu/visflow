@@ -201,3 +201,148 @@
 .toolbar__import-btn:active {
   transform: scale(0.97);
 }
+
+/* NSFW filter dropdown */
+.toolbar__nsfw-wrapper {
+  position: relative;
+}
+
+.toolbar__nsfw-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+
+.toolbar__nsfw-btn:hover {
+  border-color: var(--border-hover);
+  color: var(--text-primary);
+}
+
+.toolbar__nsfw-btn--active {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-muted);
+}
+
+.toolbar__nsfw-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 200px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  padding: 6px;
+  z-index: 1000;
+  animation: fadeInDown 0.15s ease;
+}
+
+@keyframes fadeInDown {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.toolbar__nsfw-menu-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: var(--text-primary);
+  text-align: left;
+  transition: background var(--transition-fast);
+}
+
+.toolbar__nsfw-menu-item:hover {
+  background: var(--bg-hover);
+}
+
+.toolbar__nsfw-menu-item:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.toolbar__nsfw-menu-item--active {
+  background: var(--accent-muted);
+  color: var(--accent);
+}
+
+.toolbar__nsfw-menu-desc {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.toolbar__nsfw-menu-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 8px;
+}
+
+/* Scan progress bar */
+.toolbar-wrapper {
+  flex-shrink: 0;
+}
+
+.toolbar__scan-progress {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 16px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+}
+
+.toolbar__scan-progress-bar {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--bg-elevated);
+  overflow: hidden;
+}
+
+.toolbar__scan-progress-fill {
+  height: 100%;
+  border-radius: 2px;
+  background: var(--accent);
+  transition: width 0.3s ease;
+}
+
+.toolbar__scan-progress-text {
+  font-size: 11px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  max-width: 400px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.toolbar__scan-cancel-btn {
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  color: var(--text-secondary);
+  transition: all var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.toolbar__scan-cancel-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}

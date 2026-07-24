@@ -28,7 +28,7 @@ function renderStars(rating: number) {
   return stars
 }
 
-export const ImageCard: React.FC<ImageCardProps> = ({
+export const ImageCard: React.FC<ImageCardProps> = React.memo(({
   image,
   isSelected,
   onSelect,
@@ -89,6 +89,7 @@ export const ImageCard: React.FC<ImageCardProps> = ({
         src={`thumb://${image.id}`}
         alt={image.fileName || ''}
         loading="lazy"
+        decoding="async"
         draggable={false}
         onLoad={handleLoad}
       />
@@ -107,4 +108,10 @@ export const ImageCard: React.FC<ImageCardProps> = ({
       )}
     </div>
   )
-}
+}, (prev, next) => {
+  return prev.image.id === next.image.id &&
+    prev.isSelected === next.isSelected &&
+    prev.onSelect === next.onSelect &&
+    prev.onOpen === next.onOpen &&
+    prev.onContextMenu === next.onContextMenu
+})

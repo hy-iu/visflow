@@ -20,6 +20,10 @@ export default function GalleryView() {
   const sortBy = useViewStore((s) => s.sortBy)
   const sortDir = useViewStore((s) => s.sortDir)
   const searchQuery = useViewStore((s) => s.searchQuery)
+  const nsfwFilter = useViewStore((s) => s.nsfwFilter)
+  const setNsfwFilter = useViewStore((s) => s.setNsfwFilter)
+  const setNsfwScanning = useViewStore((s) => s.setNsfwScanning)
+  const setNsfwScanProgress = useViewStore((s) => s.setNsfwScanProgress)
 
   const images = useLibraryStore((s) => s.images)
   const collections = useLibraryStore((s) => s.collections)
@@ -100,7 +104,32 @@ export default function GalleryView() {
       menuItems.push({ divider: true })
     }
 
-    // 4. Delete
+    // 4. NSFW mark/unmark
+    menuItems.push({
+      label: `🚫 标记为 NSFW (隐藏)`,
+      onClick: async () => {
+        try {
+          await window.api.nsfwBatchSetStatus(targets, 'nsfw')
+          loadImages()
+        } catch (err) {
+          console.error(err)
+        }
+      }
+    })
+    menuItems.push({
+      label: `✅ 标记为安全 (取消隐藏)`,
+      onClick: async () => {
+        try {
+          await window.api.nsfwBatchSetStatus(targets, 'safe')
+          loadImages()
+        } catch (err) {
+          console.error(err)
+        }
+      }
+    })
+    menuItems.push({ divider: true })
+
+    // 5. Delete
     menuItems.push({
       label: `🗑️ 从库中删除 (${targets.length} 张照片)`,
       onClick: async () => {
@@ -124,13 +153,13 @@ export default function GalleryView() {
     })
   }
 
-  // Reload images when view, sort, or search changes (debounced to avoid duplicate/rapid loads)
+  // Reload images when view, sort, search, or nsfw filter changes (debounced to avoid duplicate/rapid loads)
   useEffect(() => {
     const handler = setTimeout(() => {
       loadImages()
     }, 150)
     return () => clearTimeout(handler)
-  }, [currentView, currentViewId, sortBy, sortDir, searchQuery])
+  }, [currentView, currentViewId, sortBy, sortDir, searchQuery, nsfwFilter])
 
   const handleDroppedFiles = async (filePaths: string[]) => {
     // Filter out non-images
@@ -184,14 +213,51 @@ export default function GalleryView() {
     <div ref={containerRef} className="gallery-view">
       {images.length === 0 ? (
         <div className="gallery-view__empty">
-          <span className="gallery-view__empty-icon">📷</span>
-          <span className="gallery-view__empty-title">你的图库空空如也</span>
-          <span className="gallery-view__empty-desc">
-            拖拽文件夹/图片文件到这里，或点击下方按钮开始导入您的照片。
-          </span>
-          <button className="btn btn-primary" onClick={handleImportClick}>
-            📥 导入文件夹
-          </button>
+          {nsfwFilter === 'safe' ? (
+            <>
+              <span className="gallery-view__empty-icon">✅</span>
+              <span className="gallery-view__empty-title">暂无已审查的图片</span>
+              <span className="gallery-view__empty-desc">
+                当前仅显示已审查为安全的图片。您可以运行审查扫描来检测图片，或切换到「全部」视图查看所有图片。
+              </span>
+              <div style={{ display: 'flex', gap: '8px' }}>
+                <button className="btn btn-primary" onClick={async () => {
+                  setNsfwScanning(true)
+                  setNsfwScanProgress({ current: 0, total: 0, fileName: '正在加载模型...', flagged: 0 })
+                  try {
+                    const cleanup = window.api.onNsfwProgress((p: any) => setNsfwScanProgress(p))
+                    await window.api.nsfwScan()
+                    cleanup()
+                  } catch (err) { console.error(err) }
+                  finally { setNsfwScanning(false); setNsfwScanProgress(null); loadImages() }
+                }}>
+                  🔍 开始审查扫描
+                </button>
+                <button className="btn" onClick={() => { setNsfwFilter('all'); loadImages({ nsfwFilter: 'all' }) }}>
+                  👁 切换到全部
+                </button>
+              </div>
+            </>
+          ) : nsfwFilter === 'nsfw' ? (
+            <>
+              <span className="gallery-view__empty-icon">🚫</span>
+              <span className="gallery-view__empty-title">没有 NSFW 图片</span>
+              <span className="gallery-view__empty-desc">
+                当前没有图片被标记为 NSFW。
+              </span>
+            </>
+          ) : (
+            <>
+              <span className="gallery-view__empty-icon">📷</span>
+              <span className="gallery-view__empty-title">你的图库空空如也</span>
+              <span className="gallery-view__empty-desc">
+                拖拽文件夹/图片文件到这里，或点击下方按钮开始导入您的照片。
+              </span>
+              <button className="btn btn-primary" onClick={handleImportClick}>
+                📥 导入文件夹
+              </button>
+            </>
+          )}
         </div>
       ) : (
         renderLayout()

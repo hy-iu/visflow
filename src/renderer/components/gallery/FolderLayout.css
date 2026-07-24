@@ -1,8 +1,12 @@
 .folder-layout {
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
   padding: 16px;
   display: flex;
   flex-direction: column;
   gap: 24px;
+  box-sizing: border-box;
   animation: fadeInGrid 300ms ease-out;
 }
 
@@ -52,6 +56,11 @@
 .folder-row__content {
   position: relative;
   width: 100%;
+}
+
+/* MasonryLayout embedded in folder row needs a fixed scroll height */
+.folder-row__content .masonry-layout {
+  height: 500px;
 }
 
 /* Horizontal unwrap scroll track */
@@ -122,6 +131,34 @@
   font-size: 13px;
   text-align: center;
   margin: 4px 0;
+}
+
+/* Show more button */
+.folder-row__show-more {
+  flex-shrink: 0;
+  height: var(--row-height, 190px);
+  min-width: 80px;
+  padding: 12px 16px;
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-muted);
+  font-size: 13px;
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.folder-row__show-more:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+}
+
+.folder-row__show-more--grid {
+  height: auto;
+  width: 100%;
+  min-width: unset;
+  padding: 10px;
+  text-align: center;
 }
 
 .folder-layout__empty {

@@ -11,6 +11,19 @@ export function registerImageHandlers(): void {
     if (filters?.search) conditions.push(like(images.fileName, `%${filters.search}%`))
     if (filters?.minRating !== undefined) conditions.push(sql`${images.rating} >= ${filters.minRating}`)
     if (filters?.colorLabel) conditions.push(eq(images.colorLabel, filters.colorLabel))
+
+    // NSFW filter logic:
+    // 'safe' = only images explicitly reviewed and marked safe
+    // 'nsfw' = only images flagged as NSFW
+    // 'all' = no nsfw filtering (includes pending/unscanned)
+    const nsfwFilter = filters?.nsfwFilter || 'safe'
+    if (nsfwFilter === 'safe') {
+      conditions.push(eq(images.nsfwStatus, 'safe'))
+    } else if (nsfwFilter === 'nsfw') {
+      conditions.push(eq(images.nsfwStatus, 'nsfw'))
+    }
+    // 'all' adds no condition
+
     if (filters?.collectionId) {
       const colImages = db.select({ imageId: imageCollections.imageId }).from(imageCollections).where(eq(imageCollections.collectionId, filters.collectionId)).all()
       const ids = colImages.map(r => r.imageId)

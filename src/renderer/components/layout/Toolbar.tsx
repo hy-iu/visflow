@@ -1,6 +1,7 @@
-import React from 'react'
+import React, { useState, useRef, useEffect } from 'react'
 import { useViewStore } from '../../stores/useViewStore'
 import { useLibraryStore } from '../../stores/useLibraryStore'
+import Modal from '../common/Modal'
 import './Toolbar.css'
 
 export default function Toolbar() {
@@ -24,11 +25,41 @@ export default function Toolbar() {
   const toggleTheme = useViewStore((s) => s.toggleTheme)
   const searchQuery = useViewStore((s) => s.searchQuery)
   const setSearchQuery = useViewStore((s) => s.setSearchQuery)
+  const nsfwFilter = useViewStore((s) => s.nsfwFilter)
+  const setNsfwFilter = useViewStore((s) => s.setNsfwFilter)
+  const nsfwScanning = useViewStore((s) => s.nsfwScanning)
+  const setNsfwScanning = useViewStore((s) => s.setNsfwScanning)
+  const nsfwScanProgress = useViewStore((s) => s.nsfwScanProgress)
+  const setNsfwScanProgress = useViewStore((s) => s.setNsfwScanProgress)
 
   const loadImages = useLibraryStore((s) => s.loadImages)
   const setImportProgress = useLibraryStore((s) => s.setImportProgress)
   const currentView = useViewStore((s) => s.currentView)
   const currentViewId = useViewStore((s) => s.currentViewId)
+
+  const [nsfwConfirm, setNsfwConfirm] = useState<'nsfw' | 'all' | null>(null)
+  const [showNsfwMenu, setShowNsfwMenu] = useState(false)
+  const [nsfwCounts, setNsfwCounts] = useState<{ safe: number; nsfw: number; pending: number; total: number } | null>(null)
+  const nsfwMenuRef = useRef<HTMLDivElement>(null)
+
+  // Close NSFW menu on outside click
+  useEffect(() => {
+    if (!showNsfwMenu) return
+    const handleClick = (e: MouseEvent) => {
+      if (nsfwMenuRef.current && !nsfwMenuRef.current.contains(e.target as Node)) {
+        setShowNsfwMenu(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [showNsfwMenu])
+
+  // Fetch counts when menu opens
+  useEffect(() => {
+    if (showNsfwMenu) {
+      window.api.nsfwGetCounts().then(setNsfwCounts).catch(() => {})
+    }
+  }, [showNsfwMenu])
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
      setSearchQuery(e.target.value)
@@ -46,7 +77,47 @@ export default function Toolbar() {
     }
   }
 
+  const handleNsfwFilterChange = (target: 'safe' | 'nsfw' | 'all') => {
+    setShowNsfwMenu(false)
+    if (target === nsfwFilter) return
+    if (target === 'nsfw' || target === 'all') {
+      setNsfwConfirm(target)
+    } else {
+      setNsfwFilter(target)
+      loadImages({ nsfwFilter: target })
+    }
+  }
+
+  const confirmNsfwChange = () => {
+    if (!nsfwConfirm) return
+    setNsfwFilter(nsfwConfirm)
+    loadImages({ nsfwFilter: nsfwConfirm })
+    setNsfwConfirm(null)
+  }
+
+  const handleStartScan = async () => {
+    setShowNsfwMenu(false)
+    setNsfwScanning(true)
+    setNsfwScanProgress({ current: 0, total: 0, fileName: '正在加载模型...', flagged: 0 })
+    try {
+      const cleanup = window.api.onNsfwProgress((p: any) => {
+        setNsfwScanProgress(p)
+      })
+      await window.api.nsfwScan()
+      cleanup()
+    } catch (err) {
+      console.error('NSFW scan error:', err)
+    } finally {
+      setNsfwScanning(false)
+      setNsfwScanProgress(null)
+      loadImages()
+    }
+  }
+
+  const nsfwFilterLabel = nsfwFilter === 'safe' ? '✅ 已审查' : nsfwFilter === 'nsfw' ? '🚫 NSFW' : '👁 全部'
+
   return (
+    <div className="toolbar-wrapper">
     <div className="toolbar">
       <div className="toolbar__left">
         <button className="toolbar__menu-btn" onClick={toggleSidebar}>
@@ -148,10 +219,118 @@ export default function Toolbar() {
           {theme === 'dark' ? '🌙' : '☀️'}
         </button>
 
+        <div className="toolbar__nsfw-wrapper" ref={nsfwMenuRef}>
+          <button
+            className={`toolbar__nsfw-btn ${nsfwFilter !== 'safe' ? 'toolbar__nsfw-btn--active' : ''}`}
+            onClick={() => setShowNsfwMenu(!showNsfwMenu)}
+            title="内容审查筛选"
+          >
+            {nsfwFilterLabel}
+          </button>
+          {showNsfwMenu && (
+            <div className="toolbar__nsfw-menu">
+              <button
+                className={`toolbar__nsfw-menu-item ${nsfwFilter === 'safe' ? 'toolbar__nsfw-menu-item--active' : ''}`}
+                onClick={() => handleNsfwFilterChange('safe')}
+              >
+                ✅ 已审查
+                <span className="toolbar__nsfw-menu-desc">{nsfwCounts ? `${nsfwCounts.safe} 张` : '隐藏 NSFW 图片'}</span>
+              </button>
+              <button
+                className={`toolbar__nsfw-menu-item ${nsfwFilter === 'nsfw' ? 'toolbar__nsfw-menu-item--active' : ''}`}
+                onClick={() => handleNsfwFilterChange('nsfw')}
+              >
+                🚫 仅 NSFW
+                <span className="toolbar__nsfw-menu-desc">{nsfwCounts ? `${nsfwCounts.nsfw} 张` : '只看被隐藏的图片'}</span>
+              </button>
+              <button
+                className={`toolbar__nsfw-menu-item ${nsfwFilter === 'all' ? 'toolbar__nsfw-menu-item--active' : ''}`}
+                onClick={() => handleNsfwFilterChange('all')}
+              >
+                👁 全部
+                <span className="toolbar__nsfw-menu-desc">{nsfwCounts ? `${nsfwCounts.total} 张（含 ${nsfwCounts.pending} 张未审查）` : '显示所有图片'}</span>
+              </button>
+              <div className="toolbar__nsfw-menu-divider" />
+              <button
+                className="toolbar__nsfw-menu-item"
+                onClick={handleStartScan}
+                disabled={nsfwScanning}
+              >
+                🔍 开始审查扫描
+                <span className="toolbar__nsfw-menu-desc">
+                  {nsfwScanning && nsfwScanProgress
+                    ? `扫描中 ${nsfwScanProgress.current}/${nsfwScanProgress.total}`
+                    : '检测未审查的图片'}
+                </span>
+              </button>
+              <button
+                className="toolbar__nsfw-menu-item"
+                onClick={async () => {
+                  setShowNsfwMenu(false)
+                  if (confirm('确定要清除所有审查结果吗？所有图片将恢复为“未审查”状态。')) {
+                    await window.api.nsfwClearResults()
+                    loadImages()
+                  }
+                }}
+                disabled={nsfwScanning}
+              >
+                🗑️ 清除审查结果
+                <span className="toolbar__nsfw-menu-desc">重置所有图片为未审查</span>
+              </button>
+            </div>
+          )}
+        </div>
+
         <button className="toolbar__import-btn" onClick={handleImportFolder}>
           📥 导入
         </button>
       </div>
+
+      {/* NSFW filter confirmation modal */}
+      {nsfwConfirm && (
+        <Modal
+          isOpen={!!nsfwConfirm}
+          onClose={() => setNsfwConfirm(null)}
+          title="内容审查提示"
+          footer={
+            <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', width: '100%' }}>
+              <button className="btn" onClick={() => setNsfwConfirm(null)}>取消</button>
+              <button className="btn btn-primary" onClick={confirmNsfwChange}>确认切换</button>
+            </div>
+          }
+        >
+          <p style={{ margin: 0, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+            {nsfwConfirm === 'nsfw'
+              ? '您即将切换到「仅 NSFW」视图，将只显示被标记为 NSFW 的已隐藏图片。确定继续？'
+              : '您即将切换到「全部」视图，将显示所有图片（包括 NSFW 内容）。确定继续？'}
+          </p>
+        </Modal>
+      )}
+    </div>
+
+    {/* NSFW scan progress bar */}
+    {nsfwScanning && nsfwScanProgress && (
+      <div className="toolbar__scan-progress">
+        <div className="toolbar__scan-progress-bar">
+          <div
+            className="toolbar__scan-progress-fill"
+            style={{ width: nsfwScanProgress.total > 0 ? `${Math.round((nsfwScanProgress.current / nsfwScanProgress.total) * 100)}%` : '0%' }}
+          />
+        </div>
+        <span className="toolbar__scan-progress-text">
+          🔍 审查扫描中 {nsfwScanProgress.total > 0 ? `${nsfwScanProgress.current}/${nsfwScanProgress.total}` : ''}
+          {nsfwScanProgress.fileName && nsfwScanProgress.fileName !== '完成' ? ` — ${nsfwScanProgress.fileName}` : ''}
+          {nsfwScanProgress.flagged > 0 ? ` | 🚫 ${nsfwScanProgress.flagged}` : ''}
+        </span>
+        <button
+          className="toolbar__scan-cancel-btn"
+          onClick={() => window.api.nsfwCancelScan()}
+          title="停止审查扫描"
+        >
+          ✕
+        </button>
+      </div>
+    )}
     </div>
   )
 }

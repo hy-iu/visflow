@@ -7,6 +7,7 @@ import { registerCollectionHandlers } from './ipc/collections'
 import { registerTagHandlers } from './ipc/tags'
 import { registerPlaylistHandlers } from './ipc/playlists'
 import { registerSmartGroupHandlers } from './ipc/smart-groups'
+import { registerNsfwHandlers } from './ipc/nsfw'
 import { importFolder, importFiles, fixMissingDimensions } from './services/importer'
 
 // Register protocol privileges before app ready
@@ -48,7 +49,7 @@ app.whenReady().then(() => {
   registerProtocols(); getDb()
   fixMissingDimensions().catch(err => console.error(err))
   registerImageHandlers(); registerCollectionHandlers(); registerTagHandlers()
-  registerPlaylistHandlers(); registerSmartGroupHandlers(); registerAppHandlers()
+  registerPlaylistHandlers(); registerSmartGroupHandlers(); registerNsfwHandlers(); registerAppHandlers()
   createWindow()
   app.on('activate', () => { if (BrowserWindow.getAllWindows().length === 0) createWindow() })
 })

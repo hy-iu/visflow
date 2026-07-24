@@ -27,6 +27,10 @@ export const images = sqliteTable('images', {
   exifJson: text('exif_json'),
   rating: integer('rating').default(0),
   colorLabel: text('color_label'),
+  /** NSFW classification score (0-1). Null = not yet scanned. */
+  nsfwScore: integer('nsfw_score'),
+  /** NSFW review status: 'pending' | 'safe' | 'nsfw'. */
+  nsfwStatus: text('nsfw_status').default('pending'),
   createdAt: integer('created_at'),
   importedAt: integer('imported_at'),
   updatedAt: integer('updated_at')

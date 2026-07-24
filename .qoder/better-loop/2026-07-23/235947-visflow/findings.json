@@ -1,0 +1,119 @@
+{
+  "summary": {
+    "projectName": "visflow",
+    "locale": "zh-CN",
+    "modelId": "agent-work-loop-v4",
+    "reportContractVersion": 24,
+    "overview": "VisFlow 是一个 Electron 桌面看图应用，拥有清晰的架构文档和类型检查路径，但缺少行为级验证、代理任务入口和交付验收机制。本次评审无可用会话证据，结论仅基于项目静态检查。",
+    "aiAgentPractice": {
+      "inspectedSurfaces": [
+        "Plugins"
+      ],
+      "coverageRows": [
+        {
+          "surface": "Plugins",
+          "scopes": [
+            "Global"
+          ],
+          "count": 3,
+          "paths": [
+            "better-loop",
+            "create-plugin",
+            "security-scan"
+          ]
+        }
+      ]
+    },
+    "suggestions": [],
+    "assignmentSummaries": [],
+    "dimensions": [
+      {
+        "id": "task-understanding",
+        "label": "任务理解",
+        "score": 52,
+        "summary": "架构文档提供了良好的上下文地图，但缺少代理入口点和任务路由指引，代理需自行推断任务边界和风险区域。",
+        "findingRefs": [
+          "no-agent-entrypoint"
+        ]
+      },
+      {
+        "id": "controlled-execution",
+        "label": "可控执行",
+        "score": 50,
+        "summary": "基本启动脚本可用且依赖已锁定，但缺少运行时版本固定、环境模板和权限边界配置。",
+        "findingRefs": []
+      },
+      {
+        "id": "change-validation",
+        "label": "改动验证",
+        "score": 40,
+        "summary": "仅有 TypeScript 类型检查作为唯一验证层，无测试、无 lint、无 CI，变更行为无法被自动验证。",
+        "findingRefs": [
+          "no-behavior-validation"
+        ]
+      },
+      {
+        "id": "reliable-delivery",
+        "label": "可靠交付",
+        "score": 38,
+        "summary": "未观察到交付验收路径、分支保护策略或回滚机制，变更直接在主分支进行。",
+        "findingRefs": [
+          "no-delivery-acceptance-path"
+        ]
+      },
+      {
+        "id": "learning-capture",
+        "label": "经验沉淀",
+        "score": 35,
+        "summary": "无可用的重复工作检测或学习捕获机制，无会话证据支持任何可复用改进。",
+        "findingRefs": []
+      }
+    ]
+  },
+  "findings": [
+    {
+      "id": "no-behavior-validation",
+      "title": "变更缺少行为级验证路径",
+      "severity": "High",
+      "reason": "项目有 48 个 TypeScript 源文件但 0 个测试文件，唯一可用的验证是类型检查。IPC 处理器、数据库查询、导入服务和缩略图生成等核心逻辑在修改后无法被自动验证，回归风险无法被检测。",
+      "expectedOutput": [
+        "添加测试运行器配置和至少一个覆盖核心逻辑的测试文件",
+        "package.json 包含可执行的 test 脚本"
+      ],
+      "expectedArtifact": "测试配置和示例测试",
+      "aiFixPrompt": "/better-loop fix this issue\n\n为项目添加最小可用的测试基础设施，覆盖核心 IPC 处理器和数据库逻辑。\n\n## 范围\n\n- 选择一个轻量测试运行器（如 vitest）\n- 为 src/main/ipc/ 中至少一个处理器编写集成测试\n- 在 package.json 中添加 test 脚本\n\n## 验证\n\n- 运行 npm test 确认测试通过\n- 确认类型检查仍然通过",
+      "dimensionRefs": [
+        "change-validation"
+      ]
+    },
+    {
+      "id": "no-agent-entrypoint",
+      "title": "缺少代理任务入口和路由指引",
+      "severity": "Medium",
+      "reason": "项目没有 AGENTS.md 或等效的代理导航文件。虽然 ARCHITECTURE.md 描述了代码结构，但缺少任务入口、高风险区域标注、验证命令映射和「何时检查何处」的指引，代理必须遍历整个仓库才能确定工作路径。",
+      "expectedOutput": [
+        "一个 80-150 行的代理入口文件，覆盖项目定位、命令、风险和验证路由"
+      ],
+      "expectedArtifact": "AGENTS.md",
+      "aiFixPrompt": "/better-loop fix this issue\n\n创建一个简洁的 AGENTS.md 代理入口文件（80-150 行），包含项目定位、目录路由、常用命令、高风险区域和验证路径。\n\n## 范围\n\n- 项目简介和技术栈\n- 目录职责速查\n- 开发命令（dev、build、typecheck）\n- 高风险区域（数据库 schema、IPC 边界、协议注册）\n- 变更后验证路由\n\n## 验证\n\n- 文件存在且内容与实际项目结构一致\n- 类型检查通过",
+      "dimensionRefs": [
+        "task-understanding"
+      ]
+    },
+    {
+      "id": "no-delivery-acceptance-path",
+      "title": "缺少交付验收和回滚路径",
+      "severity": "Medium",
+      "reason": "项目没有 CI/CD 配置、分支保护规则或 PR 审查流程。所有 10 个提交均直接在主分支完成，无预提交钩子、无发布脚本、无回滚文档。变更在本地验证（仅类型检查）后直接成为最终状态，缺少独立的验收决策点。",
+      "expectedOutput": [
+        "预提交钩子或等效机制在提交前运行验证",
+        "文档记录分支策略和回滚路径"
+      ],
+      "expectedArtifact": "交付流程配置和文档",
+      "aiFixPrompt": "/better-loop fix this issue\n\n为项目建立最小交付验收路径。\n\n## 范围\n\n- 添加 pre-commit 钩子运行类型检查\n- 在 README 或 AGENTS.md 中记录分支策略和发布流程\n- 添加基本的回滚指引（git revert 路径）\n\n## 验证\n\n- 确认钩子在提交前执行类型检查\n- 确认文档包含分支和回滚说明",
+      "dimensionRefs": [
+        "reliable-delivery"
+      ]
+    }
+  ]
+}

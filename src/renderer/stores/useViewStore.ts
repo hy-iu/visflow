@@ -6,6 +6,7 @@ type SortBy = 'importedAt' | 'createdAt' | 'fileName' | 'rating' | 'fileSize'
 type SortDir = 'asc' | 'desc'
 type NavigationView = 'all' | 'collection' | 'tag' | 'playlist' | 'smartGroup'
 type FoldersSortBy = 'name' | 'count' | 'path'
+type NsfwFilter = 'safe' | 'nsfw' | 'all'
 
 interface ViewState {
   layoutStyle: LayoutStyle
@@ -24,6 +25,9 @@ interface ViewState {
   viewerOpen: boolean
   viewerImageId: string | null
   searchQuery: string
+  nsfwFilter: NsfwFilter
+  nsfwScanning: boolean
+  nsfwScanProgress: { current: number; total: number; fileName: string; flagged: number } | null
 
   setLayoutStyle: (style: LayoutStyle) => void
   setOrgMode: (mode: OrgMode) => void
@@ -39,6 +43,9 @@ interface ViewState {
   openViewer: (imageId: string) => void
   closeViewer: () => void
   setSearchQuery: (q: string) => void
+  setNsfwFilter: (f: NsfwFilter) => void
+  setNsfwScanning: (v: boolean) => void
+  setNsfwScanProgress: (p: { current: number; total: number; fileName: string; flagged: number } | null) => void
 }
 
 const savedTheme = (typeof localStorage !== 'undefined'
@@ -62,6 +69,9 @@ export const useViewStore = create<ViewState>((set) => ({
   viewerOpen: false,
   viewerImageId: null,
   searchQuery: '',
+  nsfwFilter: 'safe',
+  nsfwScanning: false,
+  nsfwScanProgress: null,
 
   setLayoutStyle: (layoutStyle) => set({ layoutStyle }),
   setOrgMode: (orgMode) => set({ orgMode }),
@@ -83,5 +93,8 @@ export const useViewStore = create<ViewState>((set) => ({
   }),
   openViewer: (imageId) => set({ viewerOpen: true, viewerImageId: imageId }),
   closeViewer: () => set({ viewerOpen: false, viewerImageId: null }),
-  setSearchQuery: (searchQuery) => set({ searchQuery })
+  setSearchQuery: (searchQuery) => set({ searchQuery }),
+  setNsfwFilter: (nsfwFilter) => set({ nsfwFilter }),
+  setNsfwScanning: (nsfwScanning) => set({ nsfwScanning }),
+  setNsfwScanProgress: (nsfwScanProgress) => set({ nsfwScanProgress })
 }))

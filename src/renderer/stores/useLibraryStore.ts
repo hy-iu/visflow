@@ -48,14 +48,15 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
       const sortBy = filters?.sortBy || viewStore.sortBy
       const sortDir = filters?.sortDir || viewStore.sortDir
       const search = filters?.search !== undefined ? filters.search : viewStore.searchQuery
+      const nsfwFilter = filters?.nsfwFilter !== undefined ? filters.nsfwFilter : viewStore.nsfwFilter
 
       let imgs: any[] = []
       if (currentView === 'all') {
-        imgs = await window.api.getImages({ sortBy, sortDir, search })
+        imgs = await window.api.getImages({ sortBy, sortDir, search, nsfwFilter })
       } else if (currentView === 'collection') {
-        imgs = await window.api.getImages({ collectionId: currentViewId || undefined, sortBy, sortDir, search })
+        imgs = await window.api.getImages({ collectionId: currentViewId || undefined, sortBy, sortDir, search, nsfwFilter })
       } else if (currentView === 'tag') {
-        imgs = await window.api.getImages({ tagIds: currentViewId ? [currentViewId] : undefined, sortBy, sortDir, search })
+        imgs = await window.api.getImages({ tagIds: currentViewId ? [currentViewId] : undefined, sortBy, sortDir, search, nsfwFilter })
       } else if (currentView === 'playlist') {
         if (currentViewId) {
           const playlist = await window.api.getPlaylistById(currentViewId)

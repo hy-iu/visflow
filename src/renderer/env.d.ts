@@ -34,6 +34,15 @@ declare global {
       importFolder: (path: string) => Promise<any>
       importFiles: (paths: string[]) => Promise<any>
       onImportProgress: (cb: (p: any) => void) => () => void
+      // NSFW review
+      nsfwScan: () => Promise<{ scanned: number; flagged: number }>
+      nsfwCancelScan: () => Promise<{ success: boolean }>
+      nsfwSetStatus: (imageId: string, status: 'safe' | 'nsfw') => Promise<{ success: boolean }>
+      nsfwBatchSetStatus: (imageIds: string[], status: 'safe' | 'nsfw') => Promise<{ success: boolean }>
+      nsfwGetPendingCount: () => Promise<{ pending: number }>
+      nsfwGetCounts: () => Promise<{ safe: number; nsfw: number; pending: number; total: number }>
+      nsfwClearResults: () => Promise<{ success: boolean }>
+      onNsfwProgress: (cb: (p: any) => void) => () => void
     }
   }
 }
