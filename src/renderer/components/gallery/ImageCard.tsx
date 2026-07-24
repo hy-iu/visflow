@@ -52,7 +52,8 @@ export const ImageCard: React.FC<ImageCardProps> = React.memo(({
   const handleCheckboxClick = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation()
-      onSelect(image.id, e.shiftKey)
+      // Checkbox click always toggles within current selection (multi-mode)
+      onSelect(image.id, true)
     },
     [image.id, onSelect]
   )
