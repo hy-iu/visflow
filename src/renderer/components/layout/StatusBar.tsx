@@ -5,6 +5,7 @@ import './StatusBar.css'
 export default function StatusBar() {
   const images = useLibraryStore((s) => s.images)
   const selectedImageIds = useLibraryStore((s) => s.selectedImageIds)
+  const clearSelection = useLibraryStore((s) => s.clearSelection)
   const importProgress = useLibraryStore((s) => s.importProgress)
 
   const hasSelected = selectedImageIds.size > 0
@@ -32,7 +33,12 @@ export default function StatusBar() {
 
       <div className="statusbar__right">
         {hasSelected && (
-          <span className="statusbar__selected">已选择 {selectedImageIds.size} 张图片</span>
+          <>
+            <span className="statusbar__selected">已选择 {selectedImageIds.size} 张图片</span>
+            <button className="statusbar__deselect-btn" onClick={clearSelection} title="取消所有选择">
+              ✕ 退出选择
+            </button>
+          </>
         )}
       </div>
     </div>
