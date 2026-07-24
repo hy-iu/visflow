@@ -97,12 +97,12 @@ function buildAppMenu(): void {
       label: '帮助',
       submenu: [
         {
-          label: 'VisFlow GitHub',
-          click: () => shell.openExternal('https://github.com/hy-iu/visflow')
+          label: 'VisFlow 文档',
+          click: () => shell.openExternal('https://hy-iu.github.io/visflow/')
         },
         {
-          label: '项目文档 (README)',
-          click: () => shell.openExternal('https://github.com/hy-iu/visflow#readme')
+          label: 'VisFlow GitHub',
+          click: () => shell.openExternal('https://github.com/hy-iu/visflow')
         },
         {
           label: '问题反馈 (Issues)',
