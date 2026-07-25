@@ -291,6 +291,88 @@
   margin: 4px 8px;
 }
 
+/* NSFW model management */
+.toolbar__nsfw-model {
+  padding: 6px 8px 4px;
+}
+
+.toolbar__nsfw-model-status {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 12px;
+  padding: 4px 4px 6px;
+}
+
+.toolbar__nsfw-model-status--ok {
+  color: var(--text-primary);
+}
+
+.toolbar__nsfw-model-status--missing {
+  color: var(--text-primary);
+}
+
+.toolbar__nsfw-model-actions {
+  display: flex;
+  gap: 6px;
+  padding: 2px 0 4px;
+}
+
+.toolbar__nsfw-model-btn {
+  flex: 1;
+  padding: 6px 8px;
+  font-size: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-hover);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+}
+
+.toolbar__nsfw-model-btn:hover {
+  background: var(--bg-elevated);
+  border-color: var(--accent);
+}
+
+.toolbar__nsfw-model-btn--primary {
+  background: var(--accent-muted);
+  color: var(--accent);
+  border-color: transparent;
+}
+
+.toolbar__nsfw-model-btn--primary:hover {
+  background: var(--accent-muted);
+  border-color: var(--accent);
+}
+
+.toolbar__nsfw-model-download {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 2px 0 4px;
+}
+
+.toolbar__nsfw-model-bar {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--bg-hover);
+  overflow: hidden;
+}
+
+.toolbar__nsfw-model-bar-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 3px;
+  transition: width 0.2s ease;
+}
+
+.toolbar__nsfw-model-error {
+  font-size: 11px;
+  color: #e5534b;
+  line-height: 1.4;
+}
+
 /* Scan progress bar */
 .toolbar-wrapper {
   flex-shrink: 0;

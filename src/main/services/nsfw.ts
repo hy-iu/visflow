@@ -16,7 +16,7 @@ import * as ort from 'onnxruntime-node'
 import fs from 'fs'
 import path from 'path'
 import sharp from 'sharp'
-import { app } from 'electron'
+import { app, net, shell } from 'electron'
 import { getDb } from '../db/connection'
 import { images } from '../db/schema'
 import { eq, isNull } from 'drizzle-orm'
@@ -25,6 +25,133 @@ let nsfwModel: nsfwjs.NSFWJS | null = null
 let yoloSession: ort.InferenceSession | null = null
 let scanCancelled = false
 let backendReady = false
+
+/** YOLO model file name (NudeNet v3). */
+const YOLO_MODEL_FILENAME = '640m.onnx'
+/**
+ * Download source for the YOLO model.
+ * Models are NOT bundled with the app; users download them on demand.
+ */
+const YOLO_MODEL_URL =
+  'https://github.com/hy-iu/visflow/releases/download/nsfw-models/640m.onnx'
+
+/**
+ * Directory where user-installed NSFW models live (inside userData).
+ * Stored outside the install dir so models survive app updates.
+ */
+export function getModelDir(): string {
+  return path.join(app.getPath('userData'), 'models', 'nudenet')
+}
+
+/**
+ * Resolve the YOLO model path. Checks the user data dir first, then falls
+ * back to the project root (development convenience). Returns null if absent.
+ */
+function resolveYoloModelPath(): string | null {
+  const candidates = [
+    path.join(getModelDir(), YOLO_MODEL_FILENAME),
+    path.join(app.getAppPath(), 'models', 'nudenet', YOLO_MODEL_FILENAME)
+  ]
+  for (const p of candidates) {
+    if (fs.existsSync(p)) return p
+  }
+  return null
+}
+
+export interface NsfwModelStatus {
+  /** Whether the YOLO (NudeNet) model is installed. */
+  yoloInstalled: boolean
+  /** Resolved path of the YOLO model, or null. */
+  yoloPath: string | null
+  /** Directory where models should be placed. */
+  modelDir: string
+  /** Download URL for the YOLO model. */
+  downloadUrl: string
+}
+
+/** Report which NSFW models are currently available. */
+export function getModelStatus(): NsfwModelStatus {
+  const yoloPath = resolveYoloModelPath()
+  return {
+    yoloInstalled: yoloPath !== null,
+    yoloPath,
+    modelDir: getModelDir(),
+    downloadUrl: YOLO_MODEL_URL
+  }
+}
+
+export interface ModelDownloadProgress {
+  phase: 'downloading' | 'done' | 'error'
+  receivedBytes: number
+  totalBytes: number
+  percent: number
+  error?: string
+}
+
+/**
+ * Download the YOLO model into the user data model dir, streaming to a temp
+ * file and renaming on completion. Reports progress via the callback.
+ */
+export async function downloadYoloModel(
+  onProgress?: (p: ModelDownloadProgress) => void
+): Promise<{ success: boolean; error?: string }> {
+  const dir = getModelDir()
+  fs.mkdirSync(dir, { recursive: true })
+  const finalPath = path.join(dir, YOLO_MODEL_FILENAME)
+  const tmpPath = `${finalPath}.download`
+
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const request = net.request({ url: YOLO_MODEL_URL, redirect: 'follow' })
+      request.on('response', (response) => {
+        if (response.statusCode !== 200) {
+          reject(new Error(`下载失败：HTTP ${response.statusCode}`))
+          return
+        }
+        const totalBytes = parseInt((response.headers['content-length'] as string) || '0', 10)
+        let receivedBytes = 0
+        const fileStream = fs.createWriteStream(tmpPath)
+        response.on('data', (chunk: Buffer) => {
+          fileStream.write(chunk)
+          receivedBytes += chunk.length
+          onProgress?.({
+            phase: 'downloading',
+            receivedBytes,
+            totalBytes,
+            percent: totalBytes > 0 ? Math.round((receivedBytes / totalBytes) * 100) : 0
+          })
+        })
+        response.on('end', () => fileStream.end(() => resolve()))
+        response.on('error', reject)
+        fileStream.on('error', reject)
+      })
+      request.on('error', reject)
+      request.end()
+    })
+    fs.renameSync(tmpPath, finalPath)
+    // Reset cached session so the next scan picks up the new model.
+    yoloSession = null
+    onProgress?.({ phase: 'done', receivedBytes: 0, totalBytes: 0, percent: 100 })
+    return { success: true }
+  } catch (err) {
+    try {
+      if (fs.existsSync(tmpPath)) fs.unlinkSync(tmpPath)
+    } catch {
+      /* ignore cleanup errors */
+    }
+    const msg = err instanceof Error ? err.message : String(err)
+    onProgress?.({ phase: 'error', receivedBytes: 0, totalBytes: 0, percent: 0, error: msg })
+    return { success: false, error: msg }
+  }
+}
+
+/** Open the model directory in the system file manager (for manual install). */
+export async function openModelDir(): Promise<string> {
+  const dir = getModelDir()
+  fs.mkdirSync(dir, { recursive: true })
+  await shell.openPath(dir)
+  return dir
+}
 
 /** nsfwjs threshold: Porn+Hentai+Sexy probability sum */
 const NSFW_THRESHOLD = 0.45
@@ -94,15 +221,17 @@ async function getNsfwModel(): Promise<nsfwjs.NSFWJS> {
 async function getYoloSession(): Promise<ort.InferenceSession | null> {
   if (yoloSession) return yoloSession
   try {
-    // Model location: bundled resources when packaged, project root in dev
-    const base = app.isPackaged ? process.resourcesPath : app.getAppPath()
-    const modelPath = path.join(base, 'models', 'nudenet', '640m.onnx')
-    if (!fs.existsSync(modelPath)) {
-      console.warn('[NSFW] YOLO model not found at:', modelPath)
+    // Model location: user data dir (downloaded on demand), project root in dev.
+    const modelPath = resolveYoloModelPath()
+    if (!modelPath) {
+      console.warn(
+        '[NSFW] YOLO model not installed. Expected at:',
+        path.join(getModelDir(), YOLO_MODEL_FILENAME)
+      )
       return null
     }
     yoloSession = await ort.InferenceSession.create(modelPath)
-    console.log('[NSFW] YOLO model loaded')
+    console.log('[NSFW] YOLO model loaded from:', modelPath)
     return yoloSession
   } catch (err) {
     console.warn('[NSFW] Failed to load YOLO model:', err)

@@ -8,7 +8,10 @@ import {
   cancelNsfwScan,
   setImageNsfwStatus,
   batchSetNsfwStatus,
-  clearNsfwResults
+  clearNsfwResults,
+  getModelStatus,
+  downloadYoloModel,
+  openModelDir
 } from '../services/nsfw'
 import { getDb } from '../db/connection'
 import { images } from '../db/schema'
@@ -78,5 +81,27 @@ export function registerNsfwHandlers(): void {
   ipcMain.handle('nsfw:clearResults', async () => {
     clearNsfwResults()
     return { success: true }
+  })
+
+  /** Get NSFW model installation status (YOLO present? model dir, etc.). */
+  ipcMain.handle('nsfw:getModelStatus', async () => {
+    return getModelStatus()
+  })
+
+  /**
+   * Download the YOLO model on demand. Emits 'nsfw:downloadProgress' events
+   * to the renderer with phase/percent/byte counts.
+   */
+  ipcMain.handle('nsfw:downloadModels', async (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender)
+    return downloadYoloModel((progress) => {
+      win?.webContents.send('nsfw:downloadProgress', progress)
+    })
+  })
+
+  /** Open the model directory in the system file manager (manual install). */
+  ipcMain.handle('nsfw:openModelDir', async () => {
+    const dir = await openModelDir()
+    return { success: true, dir }
   })
 }

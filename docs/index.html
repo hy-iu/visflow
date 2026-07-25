@@ -351,7 +351,15 @@
           <li>筛选视图：默认隐藏 NSFW 图片，可切换为"仅 NSFW"或"全部"视图。</li>
           <li>批量扫描：一键扫描未审查图片，支持实时进度显示和取消。</li>
           <li>手动标记：右键菜单支持批量标记/取消 NSFW。</li>
+          <li>模型按需获取：NudeNet YOLO 模型不随应用打包，首次使用时可一键下载或手动放置。</li>
         </ul>
+
+        <div class="note">
+          <b>关于审查模型：</b> 为控制安装包体积，NudeNet v3 YOLO 检测模型（约 99 MB）不随应用一起安装。
+          打开工具栏的审查菜单即可看到模型状态：点击<b>“自动下载模型”</b>会在线下载并显示进度；
+          或点击<b>“打开模型目录”</b>手动将 <code>640m.onnx</code> 放入
+          <code>%APPDATA%\visflow\models\nudenet\</code>。InceptionV3 模型已内置，无需额外下载。
+        </div>
 
         <h2 id="multiselect">四、图片多选操作</h2>
         <table class="classic">

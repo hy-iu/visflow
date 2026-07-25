@@ -40,6 +40,20 @@ export default function Toolbar() {
   const [nsfwConfirm, setNsfwConfirm] = useState<'nsfw' | 'all' | null>(null)
   const [showNsfwMenu, setShowNsfwMenu] = useState(false)
   const [nsfwCounts, setNsfwCounts] = useState<{ safe: number; nsfw: number; pending: number; total: number } | null>(null)
+  const [modelStatus, setModelStatus] = useState<{
+    yoloInstalled: boolean
+    yoloPath: string | null
+    modelDir: string
+    downloadUrl: string
+  } | null>(null)
+  const [downloading, setDownloading] = useState(false)
+  const [downloadProgress, setDownloadProgress] = useState<{
+    phase: 'downloading' | 'done' | 'error'
+    receivedBytes: number
+    totalBytes: number
+    percent: number
+    error?: string
+  } | null>(null)
   const nsfwMenuRef = useRef<HTMLDivElement>(null)
 
   // Close NSFW menu on outside click
@@ -54,12 +68,32 @@ export default function Toolbar() {
     return () => document.removeEventListener('mousedown', handleClick)
   }, [showNsfwMenu])
 
-  // Fetch counts when menu opens
+  // Fetch counts and model status when menu opens
   useEffect(() => {
     if (showNsfwMenu) {
       window.api.nsfwGetCounts().then(setNsfwCounts).catch(() => {})
+      window.api.nsfwGetModelStatus().then(setModelStatus).catch(() => {})
     }
   }, [showNsfwMenu])
+
+  // Download the YOLO model on demand, with live progress.
+  const handleDownloadModels = async () => {
+    setDownloading(true)
+    setDownloadProgress({ phase: 'downloading', receivedBytes: 0, totalBytes: 0, percent: 0 })
+    const cleanup = window.api.onNsfwDownloadProgress((p) => setDownloadProgress(p))
+    try {
+      const result = await window.api.nsfwDownloadModels()
+      if (result.success) {
+        const status = await window.api.nsfwGetModelStatus()
+        setModelStatus(status)
+      }
+    } catch (err) {
+      console.error('Model download error:', err)
+    } finally {
+      cleanup()
+      setDownloading(false)
+    }
+  }
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
      setSearchQuery(e.target.value)
@@ -277,6 +311,62 @@ export default function Toolbar() {
                 🗑️ 清除审查结果
                 <span className="toolbar__nsfw-menu-desc">重置所有图片为未审查</span>
               </button>
+              <div className="toolbar__nsfw-menu-divider" />
+              <div className="toolbar__nsfw-model">
+                {modelStatus?.yoloInstalled ? (
+                  <div className="toolbar__nsfw-model-status toolbar__nsfw-model-status--ok">
+                    🟢 审查模型已就绪
+                    <span className="toolbar__nsfw-menu-desc">NudeNet YOLO 检测模型已安装</span>
+                  </div>
+                ) : (
+                  <>
+                    <div className="toolbar__nsfw-model-status toolbar__nsfw-model-status--missing">
+                      🟡 YOLO 模型未安装
+                      <span className="toolbar__nsfw-menu-desc">
+                        缺少 NudeNet 检测模型，审查精度会下降。可自动下载或手动放置。
+                      </span>
+                    </div>
+                    {downloading && downloadProgress ? (
+                      <div className="toolbar__nsfw-model-download">
+                        {downloadProgress.phase === 'error' ? (
+                          <>
+                            <span className="toolbar__nsfw-model-error">下载失败：{downloadProgress.error}</span>
+                            <div className="toolbar__nsfw-model-actions">
+                              <button className="toolbar__nsfw-model-btn toolbar__nsfw-model-btn--primary" onClick={handleDownloadModels}>
+                                🔄 重试下载
+                              </button>
+                              <button className="toolbar__nsfw-model-btn" onClick={() => window.api.nsfwOpenModelDir()}>
+                                📂 打开模型目录
+                              </button>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="toolbar__nsfw-model-bar">
+                              <div className="toolbar__nsfw-model-bar-fill" style={{ width: `${downloadProgress.percent}%` }} />
+                            </div>
+                            <span className="toolbar__nsfw-menu-desc">
+                              正在下载模型 {downloadProgress.percent}%
+                              {downloadProgress.totalBytes > 0
+                                ? `（${Math.round(downloadProgress.receivedBytes / 1048576)}/${Math.round(downloadProgress.totalBytes / 1048576)} MB）`
+                                : ''}
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="toolbar__nsfw-model-actions">
+                        <button className="toolbar__nsfw-model-btn toolbar__nsfw-model-btn--primary" onClick={handleDownloadModels}>
+                          ⬇️ 自动下载模型
+                        </button>
+                        <button className="toolbar__nsfw-model-btn" onClick={() => window.api.nsfwOpenModelDir()}>
+                          📂 打开模型目录
+                        </button>
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
             </div>
           )}
         </div>

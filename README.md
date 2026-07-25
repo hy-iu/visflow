@@ -29,6 +29,7 @@ VisFlow 是一款基于 Electron + React + TypeScript 构建的高颜值、高�
   - 筛选视图：默认隐藏 NSFW 图片，可切换为“仅 NSFW”或“全部”视图。
   - 批量扫描：一键扫描未审查图片，支持实时进度显示和取消。
   - 手动标记：右键菜单支持批量标记/取消 NSFW。
+  - 模型按需获取：为控制安装包体积，NudeNet YOLO 模型（约 99 MB）不随应用打包。首次使用时可在审查菜单中一键自动下载，或手动下载后放入模型目录（`%APPDATA%\visflow\models\nudenet\`）。InceptionV3 模型已内置于 nsfwjs 依赖中。
 
 - **高性能虚拟滚动**
   - 网格布局：基于 `@tanstack/react-virtual` 的行级虚拟化，万张图片仅渲染可见区域。

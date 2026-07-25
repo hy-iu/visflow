@@ -43,6 +43,24 @@ declare global {
       nsfwGetCounts: () => Promise<{ safe: number; nsfw: number; pending: number; total: number }>
       nsfwClearResults: () => Promise<{ success: boolean }>
       onNsfwProgress: (cb: (p: any) => void) => () => void
+      // NSFW model management
+      nsfwGetModelStatus: () => Promise<{
+        yoloInstalled: boolean
+        yoloPath: string | null
+        modelDir: string
+        downloadUrl: string
+      }>
+      nsfwDownloadModels: () => Promise<{ success: boolean; error?: string }>
+      nsfwOpenModelDir: () => Promise<{ success: boolean; dir: string }>
+      onNsfwDownloadProgress: (
+        cb: (p: {
+          phase: 'downloading' | 'done' | 'error'
+          receivedBytes: number
+          totalBytes: number
+          percent: number
+          error?: string
+        }) => void
+      ) => () => void
     }
   }
 }

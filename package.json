@@ -27,14 +27,10 @@
     },
     "files": [
       "out/**/*",
-      "package.json"
-    ],
-    "extraResources": [
-      {
-        "from": "models",
-        "to": "models",
-        "filter": ["**/*"]
-      }
+      "package.json",
+      "!node_modules/onnxruntime-node/bin/napi-v6/darwin/**",
+      "!node_modules/onnxruntime-node/bin/napi-v6/linux/**",
+      "!node_modules/onnxruntime-node/bin/napi-v6/win32/arm64/**"
     ],
     "asarUnpack": [
       "**/*.node"
