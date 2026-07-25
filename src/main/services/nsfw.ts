@@ -193,11 +193,15 @@ const YOLO_SEXY_CLASSES = new Set([
 async function ensureBackend(): Promise<void> {
   if (backendReady) return
   try {
-    const wasmPath = path.dirname(require.resolve('@tensorflow/tfjs-backend-wasm'))
-    tfWasm.setWasmPaths(wasmPath + '/')
+    // WASM binary files are copied to resources/tfjs-wasm/ by electron-builder.
+    // In dev mode, resolve from node_modules directly.
+    const wasmPath = app.isPackaged
+      ? path.join(process.resourcesPath, 'tfjs-wasm') + '/'
+      : path.dirname(require.resolve('@tensorflow/tfjs-backend-wasm')) + '/'
+    tfWasm.setWasmPaths(wasmPath)
     await tf.setBackend('wasm')
     await tf.ready()
-    console.log('[NSFW] Using WASM backend')
+    console.log('[NSFW] Using WASM backend, wasmPath:', wasmPath)
   } catch (err) {
     console.warn('[NSFW] WASM backend failed, falling back to default:', err)
     await tf.ready()
