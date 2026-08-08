@@ -428,3 +428,10 @@
   background: var(--bg-hover);
   color: var(--text-primary);
 }
+
+/* Folders group-by-parent toggle active state */
+.toolbar__wrap-btn--active {
+  border-color: var(--accent) !important;
+  color: var(--accent) !important;
+  background: rgba(99, 102, 241, 0.1);
+}

@@ -7,10 +7,10 @@ import { v4 as uuidv4 } from 'uuid'
 export function registerTagHandlers(): void {
   ipcMain.handle('tags:getAll', async () => {
     const db = getDb(); const allTags = db.select().from(tags).all()
-    return allTags.map(tag => {
-      const count = db.select({ count: sql<number>`count(*)` }).from(imageTags).where(eq(imageTags.tagId, tag.id)).get()
-      return { ...tag, imageCount: count?.count || 0 }
-    })
+    // Single aggregated count query instead of one query per tag (N+1)
+    const counts = db.select({ tagId: imageTags.tagId, count: sql<number>`count(*)` }).from(imageTags).groupBy(imageTags.tagId).all()
+    const countMap = new Map(counts.map((c) => [c.tagId, c.count]))
+    return allTags.map(tag => ({ ...tag, imageCount: countMap.get(tag.id) || 0 }))
   })
   ipcMain.handle('tags:create', async (_e, data: any) => {
     const db = getDb(); const id = uuidv4()
@@ -27,9 +27,10 @@ export function registerTagHandlers(): void {
     const db = getDb(); db.delete(imageTags).where(eq(imageTags.tagId, id)).run(); db.delete(tags).where(eq(tags.id, id)).run()
   })
   ipcMain.handle('tags:addToImages', async (_e, tagId: string, imageIds: string[]) => {
-    const db = getDb(); for (const imageId of imageIds) { try { db.insert(imageTags).values({ imageId, tagId }).run() } catch {} }
+    const db = getDb(); db.transaction((tx) => { for (const imageId of imageIds) { try { tx.insert(imageTags).values({ imageId, tagId }).run() } catch {} } })
   })
   ipcMain.handle('tags:removeFromImages', async (_e, tagId: string, imageIds: string[]) => {
-    const db = getDb(); for (const imageId of imageIds) { db.delete(imageTags).where(and(eq(imageTags.tagId, tagId), eq(imageTags.imageId, imageId))).run() }
+    const db = getDb()
+    db.transaction((tx) => { for (const imageId of imageIds) { tx.delete(imageTags).where(and(eq(imageTags.tagId, tagId), eq(imageTags.imageId, imageId))).run() } })
   })
 }

@@ -110,7 +110,9 @@ export const ImageCard: React.FC<ImageCardProps> = React.memo(({
     </div>
   )
 }, (prev, next) => {
-  return prev.image.id === next.image.id &&
+  // Compare by image object identity: a reload produces new objects (re-render),
+  // while selection changes only touch the isSelected prop.
+  return prev.image === next.image &&
     prev.isSelected === next.isSelected &&
     prev.onSelect === next.onSelect &&
     prev.onOpen === next.onOpen &&

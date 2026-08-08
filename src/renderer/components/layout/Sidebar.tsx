@@ -1,12 +1,24 @@
 import React, { useState } from 'react'
 import { useViewStore } from '../../stores/useViewStore'
 import { useLibraryStore } from '../../stores/useLibraryStore'
+import { usePlayerStore } from '../../stores/usePlayerStore'
 import { buildCollectionTree } from '../../lib/utils'
 import CollectionTree from '../organize/CollectionTree'
 import PlaylistEditor from '../organize/PlaylistEditor'
 import SmartGroupEditor from '../organize/SmartGroupEditor'
 import Modal from '../common/Modal'
 import './Sidebar.css'
+
+const PRESET_TAG_COLORS = [
+  '#6366f1', // Indigo
+  '#3b82f6', // Blue
+  '#10b981', // Green
+  '#f59e0b', // Yellow
+  '#ef4444', // Red
+  '#ec4899', // Pink
+  '#8b5cf6', // Purple
+  '#6b7280', // Grey
+]
 
 export default function Sidebar() {
   const sidebarOpen = useViewStore((s) => s.sidebarOpen)
@@ -42,6 +54,39 @@ export default function Sidebar() {
     placeholder: string
   } | null>(null)
   const [modalInput, setModalInput] = useState('')
+  const [colorPickerTagId, setColorPickerTagId] = useState<string | null>(null)
+
+  const startPlayback = usePlayerStore((s) => s.startPlayback)
+
+  const handleTagColorChange = async (tagId: string, color: string) => {
+    try {
+      await window.api.updateTag(tagId, { color })
+      setColorPickerTagId(null)
+      loadTags()
+    } catch (err) {
+      console.error(err)
+    }
+  }
+
+  const handlePlayPlaylist = async (playlistId: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    try {
+      const pl = await window.api.getPlaylistById(playlistId)
+      if (!pl?.items?.length) {
+        alert('播放列表为空，请先在照片右键菜单中添加图片。')
+        return
+      }
+      startPlayback(pl.items.map((item: any) => item.imageId), {
+        transition: pl.transition,
+        durationMs: pl.durationMs,
+        transitionMs: pl.transitionMs,
+        loop: pl.loop === 1,
+        shuffle: pl.shuffle === 1,
+      })
+    } catch (err) {
+      console.error(err)
+    }
+  }
 
   const handleDeleteTag = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation()
@@ -251,24 +296,46 @@ export default function Sidebar() {
             {tags.map((tag) => {
               const isActive = currentView === 'tag' && currentViewId === tag.id
               return (
-                <div
-                  key={tag.id}
-                  className={`sidebar__nav-item ${isActive ? 'sidebar__nav-item--active' : ''}`}
-                  onClick={() => navigateTo('tag', tag.id, tag.name)}
-                >
-                  <span className="sidebar__tag-dot" style={{ backgroundColor: tag.color || '#6366f1' }} />
-                  <span className="sidebar__nav-label">{tag.name}</span>
-                  {tag.imageCount > 0 && <span className="sidebar__nav-badge">{tag.imageCount}</span>}
-                  <div className="sidebar__item-actions">
-                    <button
-                      className="sidebar__item-action-btn sidebar__item-action-btn--delete"
-                      onClick={(e) => handleDeleteTag(tag.id, e)}
-                      title="删除标签"
-                    >
-                      🗑️
-                    </button>
+                <React.Fragment key={tag.id}>
+                  <div
+                    className={`sidebar__nav-item ${isActive ? 'sidebar__nav-item--active' : ''}`}
+                    onClick={() => navigateTo('tag', tag.id, tag.name)}
+                  >
+                    <span
+                      className="sidebar__tag-dot sidebar__tag-dot--clickable"
+                      style={{ backgroundColor: tag.color || '#6366f1' }}
+                      title="点击修改标签颜色"
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setColorPickerTagId(colorPickerTagId === tag.id ? null : tag.id)
+                      }}
+                    />
+                    <span className="sidebar__nav-label">{tag.name}</span>
+                    {tag.imageCount > 0 && <span className="sidebar__nav-badge">{tag.imageCount}</span>}
+                    <div className="sidebar__item-actions">
+                      <button
+                        className="sidebar__item-action-btn sidebar__item-action-btn--delete"
+                        onClick={(e) => handleDeleteTag(tag.id, e)}
+                        title="删除标签"
+                      >
+                        🗑️
+                      </button>
+                    </div>
                   </div>
-                </div>
+                  {colorPickerTagId === tag.id && (
+                    <div className="sidebar__tag-color-picker">
+                      {PRESET_TAG_COLORS.map((c) => (
+                        <div
+                          key={c}
+                          className={`sidebar__tag-color-swatch ${(tag.color || '#6366f1') === c ? 'sidebar__tag-color-swatch--selected' : ''}`}
+                          style={{ backgroundColor: c }}
+                          title={c}
+                          onClick={() => handleTagColorChange(tag.id, c)}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </React.Fragment>
               )
             })}
           </div>
@@ -298,6 +365,13 @@ export default function Sidebar() {
                   <span className="sidebar__nav-icon">🎬</span>
                   <span className="sidebar__nav-label">{pl.name}</span>
                   <div className="sidebar__item-actions">
+                    <button
+                      className="sidebar__item-action-btn sidebar__item-action-btn--play"
+                      onClick={(e) => handlePlayPlaylist(pl.id, e)}
+                      title="开始放映"
+                    >
+                      ▶
+                    </button>
                     <button
                       className="sidebar__item-action-btn"
                       onClick={(e) => {

@@ -2,9 +2,11 @@ import { contextBridge, ipcRenderer } from 'electron'
 
 contextBridge.exposeInMainWorld('api', {
   getImages: (filters?: any) => ipcRenderer.invoke('images:getAll', filters),
+  getFolderIndex: (filters?: any) => ipcRenderer.invoke('folders:getIndex', filters),
   getImageById: (id: string) => ipcRenderer.invoke('images:getById', id),
   updateImage: (id: string, data: any) => ipcRenderer.invoke('images:update', id, data),
   deleteImage: (id: string) => ipcRenderer.invoke('images:delete', id),
+  deleteImagesBatch: (ids: string[]) => ipcRenderer.invoke('images:deleteBatch', ids),
   getCollections: () => ipcRenderer.invoke('collections:getAll'),
   createCollection: (data: any) => ipcRenderer.invoke('collections:create', data),
   updateCollection: (id: string, data: any) => ipcRenderer.invoke('collections:update', id, data),

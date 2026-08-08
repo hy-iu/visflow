@@ -2,9 +2,19 @@ declare global {
   interface Window {
     api: {
       getImages: (filters?: any) => Promise<any[]>
+      getFolderIndex: (filters?: any) => Promise<
+        Array<{
+          dirPath: string
+          dirName: string
+          count: number
+          latestImportedAt: number
+          latestCreatedAt: number
+        }>
+      >
       getImageById: (id: string) => Promise<any>
       updateImage: (id: string, data: any) => Promise<any>
       deleteImage: (id: string) => Promise<void>
+      deleteImagesBatch: (ids: string[]) => Promise<void>
       getCollections: () => Promise<any[]>
       createCollection: (data: any) => Promise<any>
       updateCollection: (id: string, data: any) => Promise<any>

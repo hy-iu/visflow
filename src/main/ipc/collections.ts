@@ -28,10 +28,10 @@ export function registerCollectionHandlers(): void {
   ipcMain.handle('collections:addImages', async (_e, collectionId: string, imageIds: string[]) => {
     const db = getDb(); const existing = db.select().from(imageCollections).where(eq(imageCollections.collectionId, collectionId)).all()
     const existingSet = new Set(existing.map(e => e.imageId)); let sortOrder = existing.length
-    for (const imageId of imageIds) { if (!existingSet.has(imageId)) { db.insert(imageCollections).values({ imageId, collectionId, sortOrder: sortOrder++ }).run() } }
+    db.transaction((tx) => { for (const imageId of imageIds) { if (!existingSet.has(imageId)) { tx.insert(imageCollections).values({ imageId, collectionId, sortOrder: sortOrder++ }).run() } } })
   })
   ipcMain.handle('collections:removeImages', async (_e, collectionId: string, imageIds: string[]) => {
     const db = getDb()
-    for (const imageId of imageIds) { db.delete(imageCollections).where(and(eq(imageCollections.collectionId, collectionId), eq(imageCollections.imageId, imageId))).run() }
+    db.transaction((tx) => { for (const imageId of imageIds) { tx.delete(imageCollections).where(and(eq(imageCollections.collectionId, collectionId), eq(imageCollections.imageId, imageId))).run() } })
   })
 }

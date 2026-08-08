@@ -61,7 +61,10 @@ export const useLibraryStore = create<LibraryState>((set, get) => ({
         if (currentViewId) {
           const playlist = await window.api.getPlaylistById(currentViewId)
           if (playlist && playlist.items) {
-            let items = playlist.items.map((item: any) => item.image).filter(Boolean)
+            // Keep the playlist item id on the image so we can remove items later
+            let items = playlist.items
+              .map((item: any) => (item.image ? { ...item.image, __playlistItemId: item.id } : null))
+              .filter(Boolean)
             if (search) {
               items = items.filter((img: any) => img.fileName?.toLowerCase().includes(search.toLowerCase()))
             }

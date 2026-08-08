@@ -18,6 +18,7 @@ export default function ImageViewer() {
   const [panOffset, setPanOffset] = useState({ x: 0, y: 0 })
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
+  const [fullRecord, setFullRecord] = useState<any>(null)
   const imgRef = useRef<HTMLImageElement>(null)
 
   useEffect(() => {
@@ -30,7 +31,17 @@ export default function ImageViewer() {
   }, [viewerImageId, images])
 
   const image = images[currentImageIndex]
-  if (!image) return null
+
+  // List queries are lean (no EXIF blob); fetch the full record on demand for
+  // the metadata panel.
+  useEffect(() => {
+    if (!image?.id) return
+    let alive = true
+    window.api.getImageById(image.id).then((full) => {
+      if (alive) setFullRecord(full)
+    }).catch(() => {})
+    return () => { alive = false }
+  }, [image?.id])
 
   const handleNext = () => {
     if (currentImageIndex < images.length - 1) {
@@ -57,6 +68,8 @@ export default function ImageViewer() {
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [currentImageIndex, images])
+
+  if (!image) return null
 
   // Mouse wheel zoom
   const handleWheel = (e: React.WheelEvent) => {
@@ -115,7 +128,8 @@ export default function ImageViewer() {
     }
   }
 
-  const exif = image.exifJson ? JSON.parse(image.exifJson) : {}
+  const exifSource = fullRecord && fullRecord.id === image.id ? { ...image, ...fullRecord } : image
+  const exif = exifSource.exifJson ? JSON.parse(exifSource.exifJson) : {}
 
   return (
     <div className="image-viewer">

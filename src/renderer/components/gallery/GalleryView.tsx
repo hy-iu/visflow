@@ -35,6 +35,9 @@ export default function GalleryView() {
   const setImportProgress = useLibraryStore((s) => s.setImportProgress)
   const loadAll = useLibraryStore((s) => s.loadAll)
   const loadImages = useLibraryStore((s) => s.loadImages)
+  const loadCollections = useLibraryStore((s) => s.loadCollections)
+  const loadTags = useLibraryStore((s) => s.loadTags)
+  const loadPlaylists = useLibraryStore((s) => s.loadPlaylists)
 
   const [contextMenu, setContextMenu] = useState<{
     position: { x: number; y: number }
@@ -58,7 +61,9 @@ export default function GalleryView() {
           onClick: async () => {
             try {
               await window.api.addImagesToCollection(col.id, targets)
-              loadAll()
+              // Only the collection counts and (possibly) the current view changed
+              loadCollections()
+              if (currentView === 'collection' && currentViewId === col.id) loadImages()
             } catch (err) {
               console.error(err)
             }
@@ -76,7 +81,8 @@ export default function GalleryView() {
           onClick: async () => {
             try {
               await window.api.addImagesToPlaylist(pl.id, targets)
-              loadAll()
+              loadPlaylists()
+              if (currentView === 'playlist' && currentViewId === pl.id) loadImages()
             } catch (err) {
               console.error(err)
             }
@@ -94,13 +100,64 @@ export default function GalleryView() {
           onClick: async () => {
             try {
               await window.api.addTagToImages(tag.id, targets)
-              loadAll()
+              loadTags()
             } catch (err) {
               console.error(err)
             }
           }
         })
       })
+      menuItems.push({ divider: true })
+    }
+
+    // 3.5 Remove from the current collection / tag / playlist
+    if (currentView === 'collection' && currentViewId) {
+      menuItems.push({
+        label: `❌ 从当前图集移除 (${targets.length} 张)`,
+        onClick: async () => {
+          try {
+            await window.api.removeImagesFromCollection(currentViewId, targets)
+            clearSelection()
+            loadImages()
+            loadCollections()
+          } catch (err) {
+            console.error(err)
+          }
+        }
+      })
+    } else if (currentView === 'tag' && currentViewId) {
+      menuItems.push({
+        label: `❌ 移除当前标签 (${targets.length} 张)`,
+        onClick: async () => {
+          try {
+            await window.api.removeTagFromImages(currentViewId, targets)
+            clearSelection()
+            loadImages()
+            loadTags()
+          } catch (err) {
+            console.error(err)
+          }
+        }
+      })
+    } else if (currentView === 'playlist' && currentViewId) {
+      menuItems.push({
+        label: `❌ 从当前播放列表移除 (${targets.length} 张)`,
+        onClick: async () => {
+          try {
+            const itemIds = images
+              .filter((img: any) => targets.includes(img.id))
+              .map((img: any) => img.__playlistItemId)
+              .filter(Boolean)
+            await window.api.removePlaylistItems(currentViewId, itemIds)
+            clearSelection()
+            loadImages()
+          } catch (err) {
+            console.error(err)
+          }
+        }
+      })
+    }
+    if (currentView === 'collection' || currentView === 'tag' || currentView === 'playlist') {
       menuItems.push({ divider: true })
     }
 
@@ -135,9 +192,7 @@ export default function GalleryView() {
       onClick: async () => {
         if (confirm(`确定要从库中删除这 ${targets.length} 张照片吗？此操作不会删除您磁盘上的原图文件。`)) {
           try {
-            for (const targetId of targets) {
-              await window.api.deleteImage(targetId)
-            }
+            await window.api.deleteImagesBatch(targets)
             clearSelection()
             loadAll()
           } catch (err) {
@@ -211,7 +266,7 @@ export default function GalleryView() {
 
   return (
     <div ref={containerRef} className="gallery-view">
-      {images.length === 0 ? (
+      {images.length === 0 && orgMode !== 'folders' ? (
         <div className="gallery-view__empty">
           {nsfwFilter === 'safe' ? (
             <>

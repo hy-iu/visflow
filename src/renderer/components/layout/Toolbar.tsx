@@ -15,6 +15,8 @@ export default function Toolbar() {
   const toggleFoldersWrap = useViewStore((s) => s.toggleFoldersWrap)
   const foldersSortBy = useViewStore((s) => s.foldersSortBy)
   const setFoldersSortBy = useViewStore((s) => s.setFoldersSortBy)
+  const foldersGroupBy = useViewStore((s) => s.foldersGroupBy)
+  const setFoldersGroupBy = useViewStore((s) => s.setFoldersGroupBy)
   const gridSize = useViewStore((s) => s.gridSize)
   const setGridSize = useViewStore((s) => s.setGridSize)
   const sortBy = useViewStore((s) => s.sortBy)
@@ -198,6 +200,14 @@ export default function Toolbar() {
             >
               {foldersWrap ? '↵ 换行' : '➔ 横滚'}
             </button>
+            <button
+              className={`btn btn-secondary toolbar__wrap-btn ${foldersGroupBy === 'parent' ? 'toolbar__wrap-btn--active' : ''}`}
+              style={{ fontSize: 12, padding: '4px 8px', minWidth: 64, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              onClick={() => setFoldersGroupBy(foldersGroupBy === 'parent' ? 'flat' : 'parent')}
+              title={foldersGroupBy === 'parent' ? '当前为目录树状展示，点击切回平铺' : '点击按目录树状展示'}
+            >
+              {foldersGroupBy === 'parent' ? '📂 树状' : '📁 平铺'}
+            </button>
           </>
         )}
 
@@ -226,6 +236,8 @@ export default function Toolbar() {
               <option value="name">📁 按文件夹名称</option>
               <option value="path">📁 按绝对路径</option>
               <option value="count">📁 按图片数量</option>
+              <option value="importedAt">📁 按导入时间</option>
+              <option value="createdAt">📁 按拍摄时间</option>
             </select>
           </>
         )}

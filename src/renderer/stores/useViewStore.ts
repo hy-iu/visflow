@@ -5,7 +5,8 @@ type OrgMode = 'all' | 'timeline' | 'folders' | 'collections'
 type SortBy = 'importedAt' | 'createdAt' | 'fileName' | 'rating' | 'fileSize'
 type SortDir = 'asc' | 'desc'
 type NavigationView = 'all' | 'collection' | 'tag' | 'playlist' | 'smartGroup'
-type FoldersSortBy = 'name' | 'count' | 'path'
+type FoldersSortBy = 'name' | 'count' | 'path' | 'importedAt' | 'createdAt'
+type FoldersGroupBy = 'flat' | 'parent'
 type NsfwFilter = 'safe' | 'nsfw' | 'all'
 
 interface ViewState {
@@ -15,6 +16,7 @@ interface ViewState {
   sortBy: SortBy
   sortDir: SortDir
   foldersSortBy: FoldersSortBy
+  foldersGroupBy: FoldersGroupBy
   gridSize: number
   theme: 'dark' | 'light'
   sidebarOpen: boolean
@@ -34,6 +36,7 @@ interface ViewState {
   toggleFoldersWrap: () => void
   setSortBy: (sortBy: SortBy) => void
   setFoldersSortBy: (by: FoldersSortBy) => void
+  setFoldersGroupBy: (by: FoldersGroupBy) => void
   toggleSortDir: () => void
   setGridSize: (size: number) => void
   toggleTheme: () => void
@@ -59,6 +62,7 @@ export const useViewStore = create<ViewState>((set) => ({
   sortBy: 'importedAt',
   sortDir: 'desc',
   foldersSortBy: 'name',
+  foldersGroupBy: 'flat',
   gridSize: 2,
   theme: savedTheme,
   sidebarOpen: true,
@@ -78,6 +82,7 @@ export const useViewStore = create<ViewState>((set) => ({
   toggleFoldersWrap: () => set((s) => ({ foldersWrap: !s.foldersWrap })),
   setSortBy: (sortBy) => set({ sortBy }),
   setFoldersSortBy: (foldersSortBy) => set({ foldersSortBy }),
+  setFoldersGroupBy: (foldersGroupBy) => set({ foldersGroupBy }),
   toggleSortDir: () => set((s) => ({ sortDir: s.sortDir === 'asc' ? 'desc' : 'asc' })),
   setGridSize: (gridSize) => set({ gridSize: Math.min(3, Math.max(1, gridSize)) }),
   toggleTheme: () => set((s) => {
