@@ -2,7 +2,7 @@ import React, { useMemo, useRef, useState, useEffect } from 'react'
 import { useVirtualizer } from '@tanstack/react-virtual'
 import { useViewStore } from '../../stores/useViewStore'
 import { useLibraryStore } from '../../stores/useLibraryStore'
-import { groupByDate } from '../../lib/utils'
+import { groupByDate, imageKey } from '../../lib/utils'
 import { ImageCard } from './ImageCard'
 import './TimelineLayout.css'
 
@@ -89,7 +89,7 @@ const TimelineGrid: React.FC<{ images: any[]; onContextMenu?: (e: React.MouseEve
           return (
             <div key={`row-${virtualItem.index}`} className="timeline-group__row" style={{ position: 'absolute', top: 0, left: 0, right: 0, height: `${cellSize}px`, transform: `translateY(${virtualItem.start}px)`, display: 'flex', gap: `${GAP}px` }}>
               {item.images!.map((image: any) => (
-                <div key={image.id} style={{ flex: 1, minWidth: 0 }}>
+                <div key={imageKey(image)} style={{ flex: 1, minWidth: 0 }}>
                   <ImageCard image={image} isSelected={selectedImageIds.has(image.id)} onSelect={selectImage} onOpen={openViewer} onContextMenu={onContextMenu} />
                 </div>
               ))}
@@ -219,7 +219,7 @@ const TimelineMasonry: React.FC<{ images: any[]; onContextMenu?: (e: React.Mouse
             )
           }
           return (
-            <div key={entry.image.id} className="timeline-masonry__item" style={{ position: 'absolute', left: `${entry.x}px`, top: `${entry.y}px`, width: `${entry.width}px`, height: `${entry.height}px` }}>
+            <div key={imageKey(entry.image)} className="timeline-masonry__item" style={{ position: 'absolute', left: `${entry.x}px`, top: `${entry.y}px`, width: `${entry.width}px`, height: `${entry.height}px` }}>
               <ImageCard image={entry.image} isSelected={selectedImageIds.has(entry.image.id)} onSelect={selectImage} onOpen={openViewer} onContextMenu={onContextMenu} />
             </div>
           )

@@ -35,6 +35,7 @@ declare global {
       addImagesToPlaylist: (pid: string, ids: string[]) => Promise<void>
       removePlaylistItems: (pid: string, ids: string[]) => Promise<void>
       reorderPlaylistItems: (pid: string, ids: string[]) => Promise<void>
+      dedupePlaylists: (dryRun?: boolean) => Promise<{ playlists: number; removed: number }>
       getSmartGroups: () => Promise<any[]>
       createSmartGroup: (data: any) => Promise<any>
       updateSmartGroup: (id: string, data: any) => Promise<any>

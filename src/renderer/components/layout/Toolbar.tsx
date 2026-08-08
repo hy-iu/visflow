@@ -35,11 +35,13 @@ export default function Toolbar() {
   const setNsfwScanProgress = useViewStore((s) => s.setNsfwScanProgress)
 
   const loadImages = useLibraryStore((s) => s.loadImages)
+  const loadPlaylists = useLibraryStore((s) => s.loadPlaylists)
   const setImportProgress = useLibraryStore((s) => s.setImportProgress)
   const currentView = useViewStore((s) => s.currentView)
   const currentViewId = useViewStore((s) => s.currentViewId)
 
   const [nsfwConfirm, setNsfwConfirm] = useState<'nsfw' | 'all' | null>(null)
+  const [deduping, setDeduping] = useState(false)
   const [showNsfwMenu, setShowNsfwMenu] = useState(false)
   const [nsfwCounts, setNsfwCounts] = useState<{ safe: number; nsfw: number; pending: number; total: number } | null>(null)
   const [modelStatus, setModelStatus] = useState<{
@@ -100,6 +102,27 @@ export default function Toolbar() {
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
      setSearchQuery(e.target.value)
    }
+
+  // Playlist dedupe: preview duplicate counts first, then confirm and execute
+  const handleDedupePlaylists = async () => {
+    if (deduping) return
+    setDeduping(true)
+    try {
+      const preview = await window.api.dedupePlaylists(true)
+      if (preview.removed === 0) {
+        alert('播放列表中没有重复的图片条目。')
+        return
+      }
+      if (!confirm(`发现 ${preview.playlists} 个播放列表中共 ${preview.removed} 条重复条目。\n确认后将仅保留每张图片的首次添加，其余重复条目将被移除。\n\n确定继续吗？`)) return
+      await window.api.dedupePlaylists(false)
+      loadPlaylists()
+      loadImages()
+    } catch (err) {
+      console.error(err)
+    } finally {
+      setDeduping(false)
+    }
+  }
 
   const handleImportFolder = async () => {
     try {
@@ -382,6 +405,15 @@ export default function Toolbar() {
             </div>
           )}
         </div>
+
+        <button
+          className="btn btn-secondary toolbar__dedupe-btn"
+          onClick={handleDedupePlaylists}
+          disabled={deduping}
+          title="清理播放列表中的重复图片条目"
+        >
+          🧹 去重
+        </button>
 
         <button className="toolbar__import-btn" onClick={handleImportFolder}>
           📥 导入

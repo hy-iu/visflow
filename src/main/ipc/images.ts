@@ -4,6 +4,20 @@ import { images, imageTags, imageCollections, playlistItems } from '../db/schema
 import { eq, desc, asc, like, and, inArray, sql, SQL } from 'drizzle-orm'
 import fs from 'fs'
 
+/** Delete images (plus junction rows and thumbnails) in a single transaction. */
+function deleteImagesByIds(db: ReturnType<typeof getDb>, ids: string[]): void {
+  if (!Array.isArray(ids) || ids.length === 0) return
+  const rows = db.select({ id: images.id, thumbPath: images.thumbPath }).from(images).where(inArray(images.id, ids)).all()
+  db.transaction((tx) => {
+    tx.delete(imageCollections).where(inArray(imageCollections.imageId, ids)).run()
+    tx.delete(imageTags).where(inArray(imageTags.imageId, ids)).run()
+    tx.delete(playlistItems).where(inArray(playlistItems.imageId, ids)).run()
+    tx.delete(images).where(inArray(images.id, ids)).run()
+  })
+  // Remove thumbnails after the transaction commits
+  for (const r of rows) { if (typeof r.thumbPath === 'string') { try { fs.unlinkSync(r.thumbPath) } catch {} } }
+}
+
 export function registerImageHandlers(): void {
   ipcMain.handle('images:getAll', async (_event, filters?: any) => {
     const db = getDb()
@@ -112,27 +126,9 @@ export function registerImageHandlers(): void {
     return db.select().from(images).where(eq(images.id, id)).get()
   })
   ipcMain.handle('images:delete', async (_event, id: string) => {
-    const db = getDb()
-    const img = db.select().from(images).where(eq(images.id, id)).get()
-    if (img && typeof img.thumbPath === 'string') { try { fs.unlinkSync(img.thumbPath) } catch {} }
-    db.transaction((tx) => {
-      tx.delete(imageCollections).where(eq(imageCollections.imageId, id)).run()
-      tx.delete(imageTags).where(eq(imageTags.imageId, id)).run()
-      tx.delete(playlistItems).where(eq(playlistItems.imageId, id)).run()
-      tx.delete(images).where(eq(images.id, id)).run()
-    })
+    deleteImagesByIds(getDb(), [id])
   })
   ipcMain.handle('images:deleteBatch', async (_event, ids: string[]) => {
-    const db = getDb()
-    if (!Array.isArray(ids) || ids.length === 0) return
-    const rows = db.select({ id: images.id, thumbPath: images.thumbPath }).from(images).where(inArray(images.id, ids)).all()
-    db.transaction((tx) => {
-      tx.delete(imageCollections).where(inArray(imageCollections.imageId, ids)).run()
-      tx.delete(imageTags).where(inArray(imageTags.imageId, ids)).run()
-      tx.delete(playlistItems).where(inArray(playlistItems.imageId, ids)).run()
-      tx.delete(images).where(inArray(images.id, ids)).run()
-    })
-    // Remove thumbnails after the transaction commits
-    for (const r of rows) { if (typeof r.thumbPath === 'string') { try { fs.unlinkSync(r.thumbPath) } catch {} } }
+    deleteImagesByIds(getDb(), ids)
   })
 }

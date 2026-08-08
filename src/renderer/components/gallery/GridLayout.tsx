@@ -3,6 +3,7 @@ import { useVirtualizer } from '@tanstack/react-virtual'
 import { useViewStore } from '../../stores/useViewStore'
 import { useLibraryStore } from '../../stores/useLibraryStore'
 import { ImageCard } from './ImageCard'
+import { imageKey } from '../../lib/utils'
 import './GridLayout.css'
 
 interface GridLayoutProps {
@@ -87,7 +88,7 @@ export const GridLayout: React.FC<GridLayoutProps> = ({ images, onContextMenu })
               }}
             >
               {rowImages.map((image) => (
-                <div key={image.id} className="grid-layout__cell" style={{ flex: 1, minWidth: 0 }}>
+                <div key={imageKey(image)} className="grid-layout__cell" style={{ flex: 1, minWidth: 0 }}>
                   <ImageCard
                     image={image}
                     isSelected={selectedImageIds.has(image.id)}

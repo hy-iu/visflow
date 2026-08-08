@@ -20,6 +20,15 @@ export function getThumbUrl(imageId: string): string {
   return `thumb://${imageId}`
 }
 
+/**
+ * Stable React list key for a gallery entry. Playlist views may contain the
+ * same image more than once (one entry per playlist item), so prefer the
+ * playlist item id when present.
+ */
+export function imageKey(image: any): string {
+  return image?.__playlistItemId || image?.id
+}
+
 export function getImageUrl(filePath: string): string {
   // Pass the absolute path as a query parameter so that standard URL parsing
   // doesn't strip or lowercase the Windows drive letter.

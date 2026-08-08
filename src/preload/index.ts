@@ -27,6 +27,7 @@ contextBridge.exposeInMainWorld('api', {
   addImagesToPlaylist: (pid: string, ids: string[]) => ipcRenderer.invoke('playlists:addImages', pid, ids),
   removePlaylistItems: (pid: string, ids: string[]) => ipcRenderer.invoke('playlists:removeItems', pid, ids),
   reorderPlaylistItems: (pid: string, ids: string[]) => ipcRenderer.invoke('playlists:reorder', pid, ids),
+  dedupePlaylists: (dryRun?: boolean) => ipcRenderer.invoke('playlists:dedupe', dryRun),
   getSmartGroups: () => ipcRenderer.invoke('smartGroups:getAll'),
   createSmartGroup: (data: any) => ipcRenderer.invoke('smartGroups:create', data),
   updateSmartGroup: (id: string, data: any) => ipcRenderer.invoke('smartGroups:update', id, data),

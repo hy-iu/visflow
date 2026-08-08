@@ -3,6 +3,7 @@ import { useViewStore } from '../../stores/useViewStore'
 import { useLibraryStore } from '../../stores/useLibraryStore'
 import { ImageCard } from './ImageCard'
 import { MasonryLayout } from './MasonryLayout'
+import { imageKey } from '../../lib/utils'
 import './FolderLayout.css' // Reuse the row styling
 
 interface CollectionRowProps {
@@ -86,7 +87,7 @@ const CollectionRow: React.FC<CollectionRowProps> = ({
         >
           {images.map((image) => (
             <ImageCard
-              key={image.id}
+              key={imageKey(image)}
               image={image}
               isSelected={selectedImageIds.has(image.id)}
               onSelect={selectImage}
@@ -105,7 +106,7 @@ const CollectionRow: React.FC<CollectionRowProps> = ({
           <div className="folder-row__grid" style={gridStyle}>
             {images.map((image) => (
               <ImageCard
-                key={image.id}
+                key={imageKey(image)}
                 image={image}
                 isSelected={selectedImageIds.has(image.id)}
                 onSelect={selectImage}

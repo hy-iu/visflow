@@ -2,6 +2,7 @@ import React, { useRef, useState, useEffect, useMemo } from 'react'
 import { useViewStore } from '../../stores/useViewStore'
 import { useLibraryStore } from '../../stores/useLibraryStore'
 import { ImageCard } from './ImageCard'
+import { imageKey } from '../../lib/utils'
 import './MasonryLayout.css'
 
 interface MasonryLayoutProps {
@@ -126,7 +127,7 @@ export const MasonryLayout: React.FC<MasonryLayoutProps> = ({ images, onContextM
       >
         {visibleItems.map((item) => (
           <div
-            key={item.image.id}
+            key={imageKey(item.image)}
             className="masonry-layout__item"
             style={{
               position: 'absolute',

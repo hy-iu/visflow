@@ -44,4 +44,31 @@ export function registerPlaylistHandlers(): void {
   })
   ipcMain.handle('playlists:removeItems', async (_e, _pid: string, itemIds: string[]) => { const db = getDb(); db.transaction((tx) => { for (const id of itemIds) { tx.delete(playlistItems).where(eq(playlistItems.id, id)).run() } }) })
   ipcMain.handle('playlists:reorder', async (_e, _pid: string, orderedIds: string[]) => { const db = getDb(); db.transaction((tx) => { orderedIds.forEach((id, i) => { tx.update(playlistItems).set({ sortOrder: i }).where(eq(playlistItems.id, id)).run() }) }) })
+  // Remove duplicate entries (same image added more than once) across all
+  // playlists, keeping the earliest item per image. dryRun only reports counts.
+  ipcMain.handle('playlists:dedupe', async (_e, dryRun?: boolean) => {
+    const db = getDb()
+    const allPlaylists = db.select().from(playlists).all()
+    const toDelete: string[] = []
+    let affected = 0
+    for (const pl of allPlaylists) {
+      const items = db.select().from(playlistItems).where(eq(playlistItems.playlistId, pl.id)).orderBy(asc(playlistItems.sortOrder)).all()
+      const seen = new Set<string>()
+      let dupsInPlaylist = 0
+      for (const item of items) {
+        const key = item.imageId || item.id
+        if (seen.has(key)) {
+          toDelete.push(item.id)
+          dupsInPlaylist++
+        } else {
+          seen.add(key)
+        }
+      }
+      if (dupsInPlaylist > 0) affected++
+    }
+    if (!dryRun && toDelete.length > 0) {
+      db.transaction((tx) => { for (const id of toDelete) { tx.delete(playlistItems).where(eq(playlistItems.id, id)).run() } })
+    }
+    return { playlists: affected, removed: toDelete.length }
+  })
 }

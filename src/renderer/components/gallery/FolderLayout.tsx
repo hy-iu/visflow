@@ -3,6 +3,7 @@ import { useViewStore } from '../../stores/useViewStore'
 import { useLibraryStore } from '../../stores/useLibraryStore'
 import { ImageCard } from './ImageCard'
 import { MasonryLayout } from './MasonryLayout'
+import { imageKey } from '../../lib/utils'
 import './FolderLayout.css'
 
 /** Max images to render per folder in unwrap (horizontal scroll) mode */
@@ -112,7 +113,7 @@ const LazyFolderContent: React.FC<LazyContentProps> = ({
       <div className={`folder-row__track folder-row__track--${layoutStyle}`} style={trackStyle}>
         {visibleImages.map((image) => (
           <ImageCard
-            key={image.id}
+            key={imageKey(image)}
             image={image}
             isSelected={selectedImageIds.has(image.id)}
             onSelect={selectImage}
@@ -139,7 +140,7 @@ const LazyFolderContent: React.FC<LazyContentProps> = ({
     <div className="folder-row__grid" style={gridStyle}>
       {visibleImages.map((image) => (
         <ImageCard
-          key={image.id}
+          key={imageKey(image)}
           image={image}
           isSelected={selectedImageIds.has(image.id)}
           onSelect={selectImage}
