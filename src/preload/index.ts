@@ -57,7 +57,7 @@ contextBridge.exposeInMainWorld('api', {
   // NSFW model management
   nsfwGetModelStatus: () => ipcRenderer.invoke('nsfw:getModelStatus'),
   nsfwDownloadModels: () => ipcRenderer.invoke('nsfw:downloadModels'),
-  nsfwOpenModelDir: () => ipcRenderer.invoke('nsfw:openModelDir'),
+  nsfwOpenModelDir: (which?: 'cls' | 'yolo') => ipcRenderer.invoke('nsfw:openModelDir', which),
   onNsfwDownloadProgress: (cb: (p: any) => void) => {
     const handler = (_e: any, p: any) => cb(p)
     ipcRenderer.on('nsfw:downloadProgress', handler)

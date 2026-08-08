@@ -1,12 +1,14 @@
 /**
  * @fileoverview NSFW detection service for VisFlow.
  *
- * Dual-model approach:
+ * Primary engine: YOLO11s-cls image classifier (ONNX, finetuned on user data).
+ * Fallback: dual-model approach:
  * 1. nsfwjs InceptionV3 (TFJS) — image classification (Porn/Hentai/Sexy)
  * 2. NudeNet v3 YOLO (ONNX) — object detection (COVERED_BUTTOCKS, EXPOSED_*, etc.)
  *
- * An image is flagged NSFW if EITHER model detects it.
- * This catches both explicit content (nsfwjs) and covered/revealing content (YOLO).
+ * An image is flagged NSFW if the classifier scores >= CLS_THRESHOLD.
+ * When the classifier is unavailable, falls back to the dual-model logic:
+ * flagged if EITHER model detects it.
  */
 
 import * as tf from '@tensorflow/tfjs'
@@ -23,9 +25,12 @@ import { eq, isNull } from 'drizzle-orm'
 
 let nsfwModel: nsfwjs.NSFWJS | null = null
 let yoloSession: ort.InferenceSession | null = null
+let clsSession: ort.InferenceSession | null = null
 let scanCancelled = false
 let backendReady = false
 
+/** Classifier model file name (YOLO11s-cls, finetuned on user labels). */
+const CLS_MODEL_FILENAME = 'nsfw-cls-yolo11s.onnx'
 /** YOLO model file name (NudeNet v3). */
 const YOLO_MODEL_FILENAME = '640m.onnx'
 /**
@@ -41,6 +46,26 @@ const YOLO_MODEL_URL =
  */
 export function getModelDir(): string {
   return path.join(app.getPath('userData'), 'models', 'nudenet')
+}
+
+/** Directory for the YOLO11s-cls classifier model. */
+export function getClsModelDir(): string {
+  return path.join(app.getPath('userData'), 'models', 'nsfw-cls')
+}
+
+/**
+ * Resolve the classifier model path. Checks the user data dir first, then falls
+ * back to the project root (development convenience). Returns null if absent.
+ */
+function resolveClsModelPath(): string | null {
+  const candidates = [
+    path.join(getClsModelDir(), CLS_MODEL_FILENAME),
+    path.join(app.getAppPath(), 'models', 'nsfw-cls', CLS_MODEL_FILENAME)
+  ]
+  for (const p of candidates) {
+    if (fs.existsSync(p)) return p
+  }
+  return null
 }
 
 /**
@@ -59,6 +84,12 @@ function resolveYoloModelPath(): string | null {
 }
 
 export interface NsfwModelStatus {
+  /** Whether the YOLO11s-cls classifier model is installed. */
+  clsInstalled: boolean
+  /** Resolved path of the classifier model, or null. */
+  clsPath: string | null
+  /** Directory where the classifier model should be placed. */
+  clsModelDir: string
   /** Whether the YOLO (NudeNet) model is installed. */
   yoloInstalled: boolean
   /** Resolved path of the YOLO model, or null. */
@@ -71,8 +102,12 @@ export interface NsfwModelStatus {
 
 /** Report which NSFW models are currently available. */
 export function getModelStatus(): NsfwModelStatus {
+  const clsPath = resolveClsModelPath()
   const yoloPath = resolveYoloModelPath()
   return {
+    clsInstalled: clsPath !== null,
+    clsPath,
+    clsModelDir: getClsModelDir(),
     yoloInstalled: yoloPath !== null,
     yoloPath,
     modelDir: getModelDir(),
@@ -153,12 +188,24 @@ export async function openModelDir(): Promise<string> {
   return dir
 }
 
+/** Open the classifier model directory in the system file manager. */
+export async function openClsModelDir(): Promise<string> {
+  const dir = getClsModelDir()
+  fs.mkdirSync(dir, { recursive: true })
+  await shell.openPath(dir)
+  return dir
+}
+
 /** nsfwjs threshold: Porn+Hentai+Sexy probability sum */
 const NSFW_THRESHOLD = 0.45
+/** YOLO11s-cls classifier threshold (finetuned, best-F1 on user data) */
+const CLS_THRESHOLD = 0.5
 /** YOLO confidence threshold (sigmoid output) */
 const YOLO_CONF = 0.55
 const YOLO_INPUT_SIZE = 640
 const YOLO_IOU = 0.5
+/** Classifier input size */
+const CLS_INPUT_SIZE = 224
 
 /** YOLO classes that indicate NSFW content */
 const YOLO_NSFW_CLASSES = new Set([
@@ -220,6 +267,30 @@ async function getNsfwModel(): Promise<nsfwjs.NSFWJS> {
 }
 
 /**
+ * Load the YOLO11s-cls classifier ONNX model (lazy singleton).
+ * Returns null if the model is not installed.
+ */
+async function getClsSession(): Promise<ort.InferenceSession | null> {
+  if (clsSession) return clsSession
+  try {
+    const modelPath = resolveClsModelPath()
+    if (!modelPath) {
+      console.warn(
+        '[NSFW] Classifier model not installed. Expected at:',
+        path.join(getClsModelDir(), CLS_MODEL_FILENAME)
+      )
+      return null
+    }
+    clsSession = await ort.InferenceSession.create(modelPath)
+    console.log('[NSFW] Classifier model loaded from:', modelPath)
+    return clsSession
+  } catch (err) {
+    console.warn('[NSFW] Failed to load classifier model:', err)
+    return null
+  }
+}
+
+/**
  * Load the NudeNet YOLO ONNX model (lazy singleton).
  */
 async function getYoloSession(): Promise<ort.InferenceSession | null> {
@@ -260,7 +331,7 @@ export function cancelNsfwScan(): void {
 
 /**
  * Scan all pending (unscanned) images for NSFW content.
- * Processes images one-by-one with a small delay to keep load low.
+ * Processes images concurrently (CONCURRENCY workers) to saturate CPU/GPU.
  *
  * @param onProgress - callback invoked after each image is processed
  * @returns total number of images flagged as NSFW
@@ -282,18 +353,20 @@ export async function scanPendingImages(
 
   const mdl = await getNsfwModel()
   const yolo = await getYoloSession()
+  const cls = await getClsSession()
+  const threshold = cls ? CLS_THRESHOLD : NSFW_THRESHOLD
   let scanned = 0
   let flagged = 0
 
-  for (const img of pending) {
-    if (scanCancelled) break
+  // 并发池：同时处理 CONCURRENCY 张，每张完成后补下一个，直到全部完成
+  const CONCURRENCY = 4
+  let next = 0
 
+  async function processOne(img: typeof pending[number]): Promise<void> {
     const fileName = img.fileName || path.basename(img.filePath)
-    onProgress?.({ current: scanned + 1, total: pending.length, fileName, flagged })
-
     try {
-      const score = await classifyImage(mdl, yolo, img.filePath)
-      const status = score >= NSFW_THRESHOLD ? 'nsfw' : 'safe'
+      const score = await classifyImage(cls, mdl, yolo, img.filePath)
+      const status = score >= threshold ? 'nsfw' : 'safe'
       if (status === 'nsfw') flagged++
 
       db.update(images)
@@ -312,28 +385,48 @@ export async function scanPendingImages(
         .where(eq(images.id, img.id))
         .run()
     }
-
     scanned++
-
-    // Small delay to keep load low (~50ms between images)
-    await new Promise((r) => setTimeout(r, 50))
+    onProgress?.({ current: scanned, total: pending.length, fileName, flagged })
   }
+
+  async function worker(): Promise<void> {
+    while (!scanCancelled) {
+      const idx = next++
+      if (idx >= pending.length) return
+      await processOne(pending[idx])
+    }
+  }
+
+  await Promise.all(Array.from({ length: CONCURRENCY }, () => worker()))
 
   onProgress?.({ current: scanned, total: pending.length, fileName: '完成', flagged })
   return { scanned, flagged }
 }
 
 /**
- * Classify a single image using both models.
- * Returns NSFW probability (0-1). Flagged if >= NSFW_THRESHOLD.
+ * Classify a single image.
+ * Uses the YOLO11s-cls classifier when available; otherwise falls back to the
+ * dual-model approach (nsfwjs + NudeNet). Returns NSFW probability (0-1).
  */
 async function classifyImage(
+  cls: ort.InferenceSession | null,
   mdl: nsfwjs.NSFWJS,
   yolo: ort.InferenceSession | null,
   filePath: string
 ): Promise<number> {
   if (!fs.existsSync(filePath)) return 0
 
+  // === Primary: YOLO11s-cls classifier (finetuned on user data) ===
+  if (cls) {
+    try {
+      const clsScore = await classifyWithCls(cls, filePath)
+      if (clsScore !== null) return clsScore
+    } catch (err) {
+      console.warn('[NSFW] Classifier inference failed, falling back:', err)
+    }
+  }
+
+  // === Fallback: dual-model (nsfwjs InceptionV3 + NudeNet YOLO) ===
   // === Pass 1: nsfwjs InceptionV3 ===
   const { data: data299, info: info299 } = await sharp(filePath)
     .resize(299, 299, { fit: 'fill' })
@@ -371,6 +464,44 @@ async function classifyImage(
   }
 
   return nsfwScore
+}
+
+/**
+ * Run the YOLO11s-cls classifier. Returns NSFW probability (0-1), or null on failure.
+ * Preprocessing matches training: short-edge resize + center crop to 224x224,
+ * normalized to [0,1] (the exported ONNX embeds ImageNet normalization).
+ * Output classes: [nsfw, sfw].
+ */
+async function classifyWithCls(
+  session: ort.InferenceSession,
+  filePath: string
+): Promise<number | null> {
+  try {
+    const { data } = await sharp(filePath)
+      .resize(CLS_INPUT_SIZE, CLS_INPUT_SIZE, { fit: 'cover', position: 'centre' })
+      .removeAlpha()
+      .raw()
+      .toBuffer({ resolveWithObject: true })
+
+    // HWC uint8 → CHW float32 [0,1]
+    const size = CLS_INPUT_SIZE * CLS_INPUT_SIZE
+    const float32 = new Float32Array(3 * size)
+    for (let i = 0; i < size; i++) {
+      float32[i] = data[i * 3] / 255.0
+      float32[size + i] = data[i * 3 + 1] / 255.0
+      float32[2 * size + i] = data[i * 3 + 2] / 255.0
+    }
+
+    const inputTensor = new ort.Tensor('float32', float32, [1, 3, CLS_INPUT_SIZE, CLS_INPUT_SIZE])
+    const results = await session.run({ [session.inputNames[0]]: inputTensor })
+    const output = results[session.outputNames[0]]
+    const probs = output.data as Float32Array
+    // 类别序：[nsfw, sfw]
+    return probs[0]
+  } catch (err) {
+    console.warn('[NSFW] Classifier inference error:', err)
+    return null
+  }
 }
 
 /**

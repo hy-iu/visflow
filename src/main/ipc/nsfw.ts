@@ -11,7 +11,8 @@ import {
   clearNsfwResults,
   getModelStatus,
   downloadYoloModel,
-  openModelDir
+  openModelDir,
+  openClsModelDir
 } from '../services/nsfw'
 import { getDb } from '../db/connection'
 import { images } from '../db/schema'
@@ -100,8 +101,8 @@ export function registerNsfwHandlers(): void {
   })
 
   /** Open the model directory in the system file manager (manual install). */
-  ipcMain.handle('nsfw:openModelDir', async () => {
-    const dir = await openModelDir()
+  ipcMain.handle('nsfw:openModelDir', async (_event, which: 'cls' | 'yolo' = 'cls') => {
+    const dir = which === 'yolo' ? await openModelDir() : await openClsModelDir()
     return { success: true, dir }
   })
 }
