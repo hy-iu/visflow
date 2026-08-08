@@ -45,6 +45,9 @@ export default function Toolbar() {
   const [showNsfwMenu, setShowNsfwMenu] = useState(false)
   const [nsfwCounts, setNsfwCounts] = useState<{ safe: number; nsfw: number; pending: number; total: number } | null>(null)
   const [modelStatus, setModelStatus] = useState<{
+    clsInstalled: boolean
+    clsPath: string | null
+    clsModelDir: string
     yoloInstalled: boolean
     yoloPath: string | null
     modelDir: string
@@ -348,17 +351,29 @@ export default function Toolbar() {
               </button>
               <div className="toolbar__nsfw-menu-divider" />
               <div className="toolbar__nsfw-model">
-                {modelStatus?.yoloInstalled ? (
+                {modelStatus?.clsInstalled ? (
                   <div className="toolbar__nsfw-model-status toolbar__nsfw-model-status--ok">
                     🟢 审查模型已就绪
-                    <span className="toolbar__nsfw-menu-desc">NudeNet YOLO 检测模型已安装</span>
+                    <span className="toolbar__nsfw-menu-desc">YOLO11s 分类模型已安装（微调自你的标注）</span>
+                  </div>
+                ) : modelStatus?.yoloInstalled ? (
+                  <div className="toolbar__nsfw-model-status toolbar__nsfw-model-status--missing">
+                    🟡 分类模型未安装，使用旧版检测模型
+                    <span className="toolbar__nsfw-menu-desc">
+                      建议将 nsfw-cls-yolo11s.onnx 放入模型目录以获得最佳精度。
+                    </span>
+                    <div className="toolbar__nsfw-model-actions">
+                      <button className="toolbar__nsfw-model-btn" onClick={() => window.api.nsfwOpenModelDir('cls')}>
+                        📂 打开分类模型目录
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <>
                     <div className="toolbar__nsfw-model-status toolbar__nsfw-model-status--missing">
-                      🟡 YOLO 模型未安装
+                      🟡 审查模型未安装
                       <span className="toolbar__nsfw-menu-desc">
-                        缺少 NudeNet 检测模型，审查精度会下降。可自动下载或手动放置。
+                        缺少审查模型，审查功能不可用。可自动下载旧版模型或手动放置分类模型。
                       </span>
                     </div>
                     {downloading && downloadProgress ? (
@@ -370,8 +385,8 @@ export default function Toolbar() {
                               <button className="toolbar__nsfw-model-btn toolbar__nsfw-model-btn--primary" onClick={handleDownloadModels}>
                                 🔄 重试下载
                               </button>
-                              <button className="toolbar__nsfw-model-btn" onClick={() => window.api.nsfwOpenModelDir()}>
-                                📂 打开模型目录
+                              <button className="toolbar__nsfw-model-btn" onClick={() => window.api.nsfwOpenModelDir('cls')}>
+                                📂 打开分类模型目录
                               </button>
                             </div>
                           </>
@@ -392,10 +407,10 @@ export default function Toolbar() {
                     ) : (
                       <div className="toolbar__nsfw-model-actions">
                         <button className="toolbar__nsfw-model-btn toolbar__nsfw-model-btn--primary" onClick={handleDownloadModels}>
-                          ⬇️ 自动下载模型
+                          ⬇️ 自动下载旧版模型
                         </button>
-                        <button className="toolbar__nsfw-model-btn" onClick={() => window.api.nsfwOpenModelDir()}>
-                          📂 打开模型目录
+                        <button className="toolbar__nsfw-model-btn" onClick={() => window.api.nsfwOpenModelDir('cls')}>
+                          📂 打开分类模型目录
                         </button>
                       </div>
                     )}

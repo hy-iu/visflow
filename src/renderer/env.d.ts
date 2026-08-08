@@ -56,13 +56,16 @@ declare global {
       onNsfwProgress: (cb: (p: any) => void) => () => void
       // NSFW model management
       nsfwGetModelStatus: () => Promise<{
+        clsInstalled: boolean
+        clsPath: string | null
+        clsModelDir: string
         yoloInstalled: boolean
         yoloPath: string | null
         modelDir: string
         downloadUrl: string
       }>
       nsfwDownloadModels: () => Promise<{ success: boolean; error?: string }>
-      nsfwOpenModelDir: () => Promise<{ success: boolean; dir: string }>
+      nsfwOpenModelDir: (which?: 'cls' | 'yolo') => Promise<{ success: boolean; dir: string }>
       onNsfwDownloadProgress: (
         cb: (p: {
           phase: 'downloading' | 'done' | 'error'

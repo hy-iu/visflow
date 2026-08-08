@@ -3,6 +3,9 @@ out
 dist
 release
 models
+datasets
+*.pt
+__pycache__/
 .env
 *.log
 .DS_Store
